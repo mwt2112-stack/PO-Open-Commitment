@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Columbia University – Purchase Order Open Commitment (Training)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #111; background: #e8e8e8; display: flex; min-height: 100vh; overflow: hidden; }
+  #report-panel { flex: 1 1 auto; background: #fff; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  #report-static { flex-shrink: 0; background: #fff; z-index: 10; }
+  #table-scroll-area { flex: 1 1 auto; overflow: auto; position: relative; }
+
+  /* NAV BAR — matches other reports */
+  .nav-bar { background: #fff; border-bottom: 1px solid #ccc; padding: 3px 10px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; }
+  .nav-link { color: #00419e; font-size: 11px; font-weight: bold; white-space: nowrap; cursor: pointer; border-radius: 2px; padding: 0 2px; transition: background 0.12s; }
+  .nav-link:hover { background: #fff3cd; outline: 1px solid #e6a817; }
+  .nav-link.active { background: #d0e8ff; outline: 1px solid #0056b3; }
+  .nav-fds-wrap { display: flex; flex-direction: column; align-items: center; white-space: nowrap; }
+  .fds-sub { font-size: 9px; color: #444; margin-top: 1px; }
+
+  /* LOGO + TITLE ROW */
+  .header-block { display: flex; align-items: flex-start; padding: 4px 10px 2px; }
+  .logo-area { display: flex; align-items: center; gap: 4px; min-width: 170px; flex-shrink: 0; }
+  .logo-crown { font-size: 20px; color: #003087; }
+  .logo-text .cu-name { font-size: 10.5px; font-weight: bold; color: #003087; text-transform: uppercase; letter-spacing: 0.4px; line-height: 1.2; }
+  .logo-text .cu-sub { font-size: 7px; color: #003087; text-transform: uppercase; letter-spacing: 0.3px; }
+  .header-center { flex: 1; text-align: center; line-height: 1.5; }
+  .header-center .fds-label { font-size: 10px; color: #333; }
+  .header-center .title-main { font-size: 11.5px; font-weight: bold; }
+  .header-center .title-sub { font-size: 11px; font-weight: bold; }
+  .header-center .title-date { font-size: 11px; }
+  .header-right { text-align: right; font-size: 10px; white-space: nowrap; min-width: 170px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1px; align-items: flex-end; }
+
+  /* WARNING NOTE — red italic text, exactly like screenshot */
+  .warning-note { padding: 3px 10px 2px; font-size: 8.5px; color: #cc0000; font-style: italic; line-height: 1.5; cursor: pointer; border-radius: 2px; transition: background 0.12s; }
+  .warning-note:hover { background: #fff0f0; }
+  .warning-note.active { background: #ffe0e0; outline: 1px solid #cc0000; }
+
+  /* REPORT META ROW */
+  .meta-row-bar { padding: 1px 10px 2px; display: flex; justify-content: space-between; font-size: 10px; border-bottom: 1px solid #aaa; }
+  .meta-left-items { display: flex; gap: 14px; }
+  .meta-item { display: flex; gap: 3px; }
+  .meta-label { font-weight: bold; }
+  .printable-link { color: #00419e; font-weight: bold; cursor: pointer; text-decoration: underline; font-size: 10px; }
+  .printable-link:hover { color: #0056d3; }
+
+  /* PARAMETERS LINE */
+  .params-bar { padding: 2px 10px 2px; font-size: 8.5px; color: #111; border-bottom: 1px solid #888; line-height: 1.4; }
+  .params-bar .p-label { font-weight: bold; }
+  .params-bar .p-val { color: #00419e; cursor: pointer; border-radius: 2px; padding: 0 1px; transition: background 0.12s; }
+  .params-bar .p-val:hover { background: #fff3cd; outline: 1px solid #e6a817; }
+  .params-bar .p-val.active { background: #d0e8ff; outline: 1px solid #0056b3; }
+
+  /* CLICKABLE (generic) */
+  .clickable { cursor: pointer; border-radius: 2px; transition: background 0.12s; padding: 0 2px; }
+  .clickable:hover { background: #fff3cd; outline: 1px solid #e6a817; }
+  .clickable.active { background: #d0e8ff; outline: 1px solid #0056b3; }
+  .clickable:focus { outline: 2px solid #0056b3; outline-offset: 1px; background: #e8f4ff; }
+
+  /* TABLE */
+  .table-wrapper { padding: 0 6px 6px; }
+  table.report-table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: fixed; }
+
+  col.c-bu       { width: 40px; }
+  col.c-po       { width: 72px; }
+  col.c-date     { width: 56px; }
+  col.c-status   { width: 22px; }
+  col.c-budst    { width: 30px; }
+  col.c-vendor   { width: 132px; }
+  col.c-origin   { width: 24px; }
+  col.c-project  { width: 88px; }
+  col.c-dept     { width: 88px; }
+  col.c-init     { width: 52px; }
+  col.c-seg      { width: 42px; }
+  col.c-site     { width: 34px; }
+  col.c-acct     { width: 36px; }
+  col.c-acctdesc { width: 110px; }
+  col.c-poma     { width: 62px; }
+  col.c-cumexp   { width: 62px; }
+  col.c-curpd    { width: 52px; }
+  col.c-ov       { width: 50px; }
+  col.c-open     { width: 68px; }
+
+  .report-table thead { position: sticky; top: 0; z-index: 5; }
+  .report-table thead tr.hdr-cols th {
+    background: #fff; text-align: right; font-weight: bold; font-size: 7.5px;
+    padding: 2px 2px; border-top: 1px solid #888; border-bottom: 2px solid #888;
+    vertical-align: bottom; line-height: 1.2; white-space: normal;
+  }
+  .report-table thead.scrolled-past tr.hdr-cols th { box-shadow: 0 3px 6px -1px rgba(0,0,0,0.15); }
+  .report-table thead tr.hdr-cols th.left { text-align: left; }
+  .report-table thead tr.hdr-cols th.cntr { text-align: center; }
+
+  .report-table tbody td { padding: 1px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; font-size: 8px; }
+  .report-table tbody td.r { text-align: right; }
+  .report-table tbody td.c { text-align: center; }
+  .report-table tbody td.open-blue { text-align: right; color: #00419e; }
+  .report-table tbody td.zero-amt { text-align: right; color: #111; }
+  .report-table tbody tr:hover td { background: #f6f6f6; }
+
+  /* Clickable data cells */
+  td.po-cell { cursor: pointer; color: #00419e; font-weight: bold; border-radius: 2px; transition: background 0.12s; }
+  td.po-cell:hover { background: #fff3cd; outline: 1px solid #e6a817; }
+  td.po-cell.active { background: #d0e8ff; outline: 1px solid #0056b3; }
+
+  td.vendor-cell { cursor: pointer; transition: background 0.12s; border-radius: 2px; }
+  td.vendor-cell:hover { background: #fff3cd; outline: 1px solid #e6a817; }
+  td.vendor-cell.active { background: #d0e8ff; outline: 1px solid #0056b3; }
+
+  td.acct-desc-cell { cursor: pointer; text-decoration: underline dotted #0056b3; color: #003087; transition: background 0.12s; border-radius: 2px; }
+  td.acct-desc-cell:hover { background: #fff3cd; }
+  td.acct-desc-cell.active { background: #d0e8ff; }
+
+  .footnotes { padding: 3px 10px 6px; font-size: 8.5px; color: #444; font-style: italic; line-height: 1.5; border-top: 1px solid #ddd; }
+
+  /* SIDE PANEL */
+  #explain-panel { width: 0; min-width: 0; overflow: hidden; background: #fafafa; border-left: 3px solid #003087; transition: width 0.28s ease, min-width 0.28s ease; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; }
+  #explain-panel.open { width: 315px; min-width: 300px; }
+  .panel-header { background: #003087; color: #fff; padding: 5px 10px; font-size: 10.5px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; min-width: 300px; flex-shrink: 0; }
+  .panel-header button { background: none; border: none; color: #fff; cursor: pointer; font-size: 14px; }
+  .panel-header button:hover { opacity: 0.7; }
+  .panel-tab-hint { font-size: 8px; font-weight: normal; opacity: 0.8; margin-left: 6px; }
+  #explain-inner { padding: 10px; overflow-y: auto; flex: 1; min-width: 300px; }
+  .explain-field-name { font-size: 12px; font-weight: bold; color: #003087; margin-bottom: 6px; border-bottom: 1px solid #ccd; padding-bottom: 3px; }
+  .explain-section { margin-bottom: 8px; }
+  .tip-badge { display: inline-block; background: #003087; color: #fff; font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 2px; margin-bottom: 2px; letter-spacing: 0.3px; }
+  .tip-badge.nav-badge { background: #6b2d8b; }
+  .tip-badge.warn-badge { background: #cc0000; }
+  .tip-badge.acct-badge { background: #1a5c1a; }
+  .tip-badge.vendor-badge { background: #8b5500; }
+  .explain-section-body { font-size: 10.5px; color: #222; line-height: 1.6; }
+
+  .training-badge { position: fixed; bottom: 8px; left: 8px; background: #003087; color: #fff; font-size: 9px; padding: 2px 8px; border-radius: 10px; z-index: 999; }
+  .tab-counter { position: fixed; bottom: 8px; left: 112px; background: #555; color: #fff; font-size: 8.5px; padding: 2px 7px; border-radius: 10px; z-index: 999; display: none; }
+  .tab-counter.visible { display: block; }
+  @keyframes hint-pulse { 0% { box-shadow: 0 0 0 0 rgba(0,48,135,0.5); } 70% { box-shadow: 0 0 0 5px rgba(0,48,135,0); } 100% { box-shadow: 0 0 0 0 rgba(0,48,135,0); } }
+  .first-hint { animation: hint-pulse 1.4s ease 0.9s 2; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="report-panel">
+  <div id="report-static">
+
+    <!-- NAV BAR -->
+    <div class="nav-bar">
+      <span class="nav-link clickable" tabindex="0" data-key="nav_prev_period">&lt; Previous Accounting Period</span>
+      <div class="nav-fds-wrap">
+        <span style="font-size:10px;font-weight:bold;color:#333;">Financial Data Store</span>
+      </div>
+      <span class="nav-link clickable" tabindex="0" data-key="nav_next_period">Next Accounting Period &gt;</span>
+    </div>
+
+    <!-- LOGO + TITLE -->
+    <div class="header-block">
+      <div class="logo-area">
+        <div class="logo-crown">&#9819;</div>
+        <div class="logo-text">
+          <div class="cu-name">Columbia University</div>
+          <div class="cu-sub">In the City of New York</div>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="fds-label">Financial Data Store</div>
+        <div class="title-main">Columbia University</div>
+        <div class="title-sub">Purchase Order Open Commitment</div>
+        <div class="title-date">As of 4/7/2026</div>
+      </div>
+      <div class="header-right">
+        <span class="printable-link clickable" tabindex="0" data-key="nav_printable">Printable Version</span>
+      </div>
+    </div>
+
+    <!-- WARNING NOTE — red italic, no background, exactly like screenshot -->
+    <div class="warning-note clickable" tabindex="0" data-key="warning_note">
+      *When running this report, encumbrances may not match encumbrances on other reports (ChartField Statement, Project Lifecycle, Trial Balance). This can be due to period end accruals, Change Orders pending budget check and Vouchers that have been matched to PO&rsquo;s but not budget checked. Open Commitment balances will not include amounts which are in Budget Check Exception (i.e. Where Budget Status is &ldquo;Error&rdquo; or &ldquo;Not Chk&rsquo;d&rdquo;). To review your encumbrances in ARC, please refer to the &ldquo;Purchase Order Activity Summary Inquiry&rdquo; job aid.
+    </div>
+
+    <!-- REPORT META ROW -->
+    <div class="meta-row-bar">
+      <div class="meta-left-items">
+        <div class="meta-item"><span class="meta-label">Report ID:</span><span>&nbsp;PO_RPT2001</span></div>
+        <div class="meta-item"><span class="meta-label">Run ID:</span><span>&nbsp;mwt2112</span></div>
+      </div>
+      <div class="meta-left-items">
+        <div class="meta-item"><span class="meta-label">Run Date:</span><span>&nbsp;04/07/2026</span></div>
+        <div class="meta-item"><span class="meta-label">Run Time:</span><span>&nbsp;5:17:31PM</span></div>
+      </div>
+    </div>
+
+    <!-- PARAMETERS LINE -->
+    <div class="params-bar">
+      <span class="p-label">PARAMETERS: </span>
+      <span class="p-val clickable" tabindex="0" data-key="param_bu">PC Business Unit(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_po_id">PO ID(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_origin">Origin(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_dept">Department(s): ALL</span> ; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_project">Projects: GG012345 - ENG Training, UR012345 - ENG Training</span>; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_activity">Activity ID(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_vendor">Vendor(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" tabindex="0" data-key="param_commit_type">Commitment Type: All Commitments</span>
+    </div>
+
+  </div><!-- /report-static -->
+
+  <!-- SCROLLABLE TABLE -->
+  <div id="table-scroll-area">
+  <div class="table-wrapper">
+  <table class="report-table">
+    <colgroup>
+      <col class="c-bu"><col class="c-po"><col class="c-date">
+      <col class="c-status"><col class="c-budst">
+      <col class="c-vendor"><col class="c-origin">
+      <col class="c-project"><col class="c-dept">
+      <col class="c-init"><col class="c-seg"><col class="c-site">
+      <col class="c-acct"><col class="c-acctdesc">
+      <col class="c-poma"><col class="c-cumexp">
+      <col class="c-curpd"><col class="c-ov"><col class="c-open">
+    </colgroup>
+    <thead id="report-thead">
+      <tr class="hdr-cols">
+        <th class="left clickable first-hint" tabindex="0" data-key="col_bu">P.O. Business Unit</th>
+        <th class="left clickable" tabindex="0" data-key="col_po_number">P.O. Number</th>
+        <th class="left clickable" tabindex="0" data-key="col_po_date">P.O. Date</th>
+        <th class="cntr clickable" tabindex="0" data-key="col_po_status">P.O. Status</th>
+        <th class="cntr clickable" tabindex="0" data-key="col_budget_status">Budget Status</th>
+        <th class="left clickable" tabindex="0" data-key="col_vendor">Vendor</th>
+        <th class="cntr clickable" tabindex="0" data-key="col_origin">Origin</th>
+        <th class="left clickable" tabindex="0" data-key="col_project">Project</th>
+        <th class="left clickable" tabindex="0" data-key="col_dept">Department</th>
+        <th class="left clickable" tabindex="0" data-key="col_initiative">Initiative</th>
+        <th class="left clickable" tabindex="0" data-key="col_segment">Segment</th>
+        <th class="cntr clickable" tabindex="0" data-key="col_site">Site</th>
+        <th class="left clickable" tabindex="0" data-key="col_account">Account</th>
+        <th class="left clickable" tabindex="0" data-key="col_acct_desc">Account Description</th>
+        <th class="right clickable" tabindex="0" data-key="col_po_merch">P.O. Merchandise Amount</th>
+        <th class="right clickable" tabindex="0" data-key="col_cumulative">Cumulative Expense</th>
+        <th class="right clickable" tabindex="0" data-key="col_current_period">Current Period</th>
+        <th class="right clickable" tabindex="0" data-key="col_open_vouchers">Open Vouchers</th>
+        <th class="right clickable" tabindex="0" data-key="col_open_commitment">Current Period Open Commitment</th>
+      </tr>
+    </thead>
+    <tbody>
+
+<!-- ROW 1 -->
+<tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000394712</td><td>09/10/2021</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000741823 - IAN VOLLMER</td><td class="c clickable" tabindex="0" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>31047</td><td>00000000</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r">22,500.00</td><td class="r">13,874.26</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">8,625.74</td></tr>
+
+<!-- ROW 2 -->
+<tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000418563</td><td>07/18/2022</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000856249 - JOHN XUEYANG ZHAO</td><td class="c clickable" tabindex="0" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>47832</td><td>59001483</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r">9,750.00</td><td class="r">8,137.50</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">1,612.50</td></tr>
+
+<!-- ROW 3 — zero spend, stale PO -->
+<tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000451829</td><td>03/31/2023</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000319874 - THOMAS MOORE</td><td class="c clickable" tabindex="0" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>63519</td><td>00000000</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r">11,200.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">11,200.00</td></tr>
+
+<!-- ROW 4 — marketing consultant -->
+<tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000463074</td><td>07/06/2023</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000628413 - ANNA BUZINOVA COLLEVECCHIO</td><td class="c clickable" tabindex="0" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>18274</td><td>59007261</td><td class="c">-</td><td>64540</td><td class="acct-desc-cell" data-acct="64540">MARKETING CONSULTANTS</td><td class="r">4,500.00</td><td class="r">2,475.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">2,025.00</td></tr>
+
+<!-- ROW 5 — software -->
+<tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000487231</td><td>11/22/2023</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000457892 - BrightEdge Technologies, Inc.</td><td class="c clickable" tabindex="0" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>25631</td><td>00000000</td><td class="c">-</td><td>63260</td><td class="acct-desc-cell" data-acct="63260">SOFTWARE PURCHASE</td><td class="r">21,600.00</td><td class="r">19,440.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">2,160.00</td></tr>
+
+<!-- ROW 6 — online PO, design firm, large -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">0000512947</td><td>05/22/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000583016 - Isometric Studio, Inc.</td><td class="c clickable" tabindex="0" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>41896</td><td>00000000</td><td class="c">-</td><td>64540</td><td class="acct-desc-cell" data-acct="64540">MARKETING CONSULTANTS</td><td class="r">55,000.00</td><td class="r">47,300.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">7,700.00</td></tr>
+
+<!-- ROW 7 — ONL software renewal -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">CU00203847</td><td>08/06/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000457892 - BrightEdge Technologies, Inc.</td><td class="c clickable" tabindex="0" data-key="col_origin">ONL</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>38715</td><td>00000000</td><td class="c">-</td><td>63260</td><td class="acct-desc-cell" data-acct="63260">SOFTWARE PURCHASE</td><td class="r">22,418.50</td><td class="r">14,936.20</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">7,482.30</td></tr>
+
+<!-- ROW 8 — has current period activity -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">CU00241956</td><td>11/19/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000724651 - Samuel Beneitone</td><td class="c clickable" tabindex="0" data-key="col_origin">ONL</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>54028</td><td>00000000</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r">8,250.00</td><td class="r">2,062.50</td><td class="r">1,375.00</td><td class="r">0.00</td><td class="open-blue">4,812.50</td></tr>
+
+<!-- ROW 9 — brand new zero spend -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">CU00289413</td><td>03/30/2026</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000391847 - Element451, Inc.</td><td class="c clickable" tabindex="0" data-key="col_origin">ONL</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>72493</td><td>59002847</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r">214,800.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">214,800.00</td></tr>
+
+<!-- ROW 10 — sponsored project, COLUM -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">CU00248731</td><td>11/26/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000967324 - Neuromatch, Inc.</td><td class="c clickable" tabindex="0" data-key="col_origin">ONL</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>81347</td><td>ab1234</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r">625,000.00</td><td class="r">312,500.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">312,500.00</td></tr>
+
+<!-- ROW 11 — facility rental, current period -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">CU00257684</td><td>12/29/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000814563 - AVI FOODSYSTEMS INC</td><td class="c clickable" tabindex="0" data-key="col_origin">ONL</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>83924</td><td>ab1234</td><td class="c">-</td><td>63010</td><td class="acct-desc-cell" data-acct="63010">RENTAL - FACILITIES</td><td class="r">3,180.00</td><td class="r">1,641.38</td><td class="r">1,378.44</td><td class="r">0.00</td><td class="open-blue">160.18</td></tr>
+
+<!-- ROW 12 — minor equipment, zero spend -->
+<tr><td>COLUM</td><td class="po-cell" data-po="online">CU00218473</td><td>10/10/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000502938 - CDW GOVT INC</td><td class="c clickable" tabindex="0" data-key="col_origin">ONL</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>76512</td><td>ab1234</td><td class="c">-</td><td>61925</td><td class="acct-desc-cell" data-acct="61925">MINOR EQUIPMENT-COMPUTERS</td><td class="r">2,340.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">2,340.00</td></tr>
+
+<!-- ROW 13 — SAPOS subcontract CUNY -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G21847</td><td>08/09/2023</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000176429 - RESEARCH FOUNDATION OF THE CITY UNIVERSI</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>93041</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">284,500.00</td><td class="r">171,283.47</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">113,216.53</td></tr>
+
+<!-- ROW 14 — SAPOS Tuskegee -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G21963</td><td>02/28/2024</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000843716 - Tuskegee University</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>91628</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">318,750.00</td><td class="r">192,406.15</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">126,343.85</td></tr>
+
+<!-- ROW 15 — SAPOS NY Hall of Science -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22014</td><td>08/09/2023</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000295847 - NEW YORK HALL OF SCIENCE</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>94357</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">402,000.00</td><td class="r">247,930.52</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">154,069.48</td></tr>
+
+<!-- ROW 16 — SAPOS Penn (largest) -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22385</td><td>03/12/2024</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000738152 - Trustees of the University of Pennsylvan</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>97283</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">874,320.00</td><td class="r">731,884.16</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">142,435.84</td></tr>
+
+<!-- ROW 17 — SAPOS McGill, current period activity -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22741</td><td>04/25/2024</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000619473 - McGill University/Royal Institution for</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>90174</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">341,500.00</td><td class="r">98,274.63</td><td class="r">52,180.00</td><td class="r">0.00</td><td class="open-blue">191,045.37</td></tr>
+
+<!-- ROW 18 — SAPOS CUNY new, zero spend -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22698</td><td>04/25/2024</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000176429 - RESEARCH FOUNDATION OF THE CITY UNIVERSI</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>92846</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">88,400.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">88,400.00</td></tr>
+
+<!-- ROW 19 — SAPOS Carnegie Mellon -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22853</td><td>04/25/2024</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000482715 - CARNEGIE MELLON UNIVERSITY</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>95162</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">498,600.00</td><td class="r">412,783.29</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">85,816.71</td></tr>
+
+<!-- ROW 20 — SAPOS Stanford -->
+<tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G23176</td><td>10/04/2025</td><td class="c clickable" tabindex="0" data-key="col_po_status">D</td><td class="c clickable" tabindex="0" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000357928 - Board of Trustees of the Leland Sta, The</td><td class="c clickable" tabindex="0" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>98435</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r">267,150.00</td><td class="r">178,392.41</td><td class="r">0.00</td><td class="r">0.00</td><td class="open-blue">88,757.59</td></tr>
+
+    </tbody>
+  </table>
+  </div>
+  <div class="footnotes">Columbia University Proprietary and Confidential &nbsp;&nbsp; Page No. 1</div>
+  </div>
+</div><!-- /report-panel -->
+
+<!-- SIDE PANEL -->
+<div id="explain-panel">
+  <div class="panel-header">
+    <span>&#128216; Field Guide <span class="panel-tab-hint">Tab &#8633; to advance | click again to close</span></span>
+    <button onclick="closePanel()" title="Close (Esc)">&#x2715;</button>
+  </div>
+  <div id="explain-inner"><div id="explain-content">
+    <p style="color:#555;font-size:10.5px;line-height:1.6;">Click any <strong style="color:#003087;">column header</strong> or <strong style="color:#cc0000;">warning message</strong> for field guidance. Click any <strong style="color:#1a5c1a;">account description</strong>, <strong>vendor name</strong>, or <strong style="color:#003087;">PO number</strong> for context. Click the same item again to close.</p>
+  </div></div>
+</div>
+<div class="training-badge">&#127891; Training Mode</div>
+<div class="tab-counter" id="tab-counter"></div>
+
+<script>
+var FIELDS = {
+  warning_note:{label:"Report Accuracy Warning",what:"This report shows open encumbrance balances as of the run date, but these balances may not exactly match the Encumbrance column on other FDS reports such as the ChartField Statement, Project Lifecycle, or Trial Balance.",interpret:"Three situations cause discrepancies: (1) Period-end accruals — at month close, the system posts accrual entries that adjust encumbrances on some reports before this one updates. (2) Change Orders pending budget check — if a PO has been modified but the change order has not yet cleared the budget checking process, the new amount will not appear here. (3) Vouchers matched to POs but not yet budget checked — when an invoice is matched to a PO in the accounts payable system but has not completed its budget check, the commitment may show differently across reports.",why:"Understanding this limitation prevents reconciliation headaches. If you run this report and the total open commitment does not match your summary report encumbrance, check whether any of these three conditions exist before escalating the discrepancy. The report also excludes POs in 'Error' or 'Not Chk'd' budget status entirely.",related:"To investigate encumbrances directly in ARC, use the 'Purchase Order Activity Summary Inquiry' job aid. Compare this report against the Encumbrance column on the Sponsored Project Financial Report or Project Summary Statement to identify gaps."},
+  col_bu:{label:"P.O. Business Unit",what:"The Columbia business unit under which this purchase order was created. COLUM = Columbia University main campus. SAPOS = Sponsored Award POs — a special PO type used exclusively for sponsored project subcontracts.",interpret:"COLUM indicates a standard departmental purchase order for goods or services. SAPOS indicates a subcontract agreement with an external research institution (subrecipient) on a sponsored award. SAPOS POs are created through the sponsored projects office and have additional compliance requirements.",why:"The business unit type tells you the compliance framework that applies. COLUM POs follow standard university procurement rules. SAPOS POs follow sponsored award regulations including Uniform Guidance subrecipient monitoring requirements.",related:"Works with Origin (ENG/ONL vs CRR) to fully characterize the PO type. SAPOS always pairs with CRR origin for subcontracts."},
+  col_po_number:{label:"P.O. Number",what:"The unique system-assigned identifier for the purchase order. Three formats appear: (1) 0000xxxxxx — ten-digit numeric IDs are older POs from the legacy procurement system, typically created before Columbia's ARC upgrade. (2) CU00xxxxxx — newer POs created through the current ARC e-procurement module. (3) G-series (G21847, G19934, etc.) — Sponsored Award PO numbers assigned to subcontracts.",interpret:"The PO number format signals the age and pathway of the purchase. Legacy 0000 POs from 2021-2023 with open balances may represent stale commitments worth reviewing. CU00 POs are current-system POs with full electronic workflow. G-series POs are subcontracts executed through the grants management system.",why:"PO numbers are the key reference for every commitment. When investigating an encumbrance on a summary report, the PO number here is what you search in ARC to see the full document, all invoices, the vendor agreement, and any change orders.",related:"Click a PO number cell for more context on its type. Also use in ARC's Purchase Order Inquiry to see the complete PO record."},
+  col_po_date:{label:"P.O. Date",what:"The date the purchase order was formally approved and entered into the financial system — the contract effective date from which the encumbrance began reserving budget.",interpret:"PO dates in this report span from 2021 to March 2026. A 2021 PO with significant remaining open commitment and no cumulative expense is a red flag — it may represent a stale commitment that should be reviewed for closure. More recent POs (2025-2026) with zero Cumulative Expense simply reflect new contracts where work has not yet started or invoices haven't arrived.",why:"PO date versus Cumulative Expense tells the utilization story. A 2023 PO with $0 spend (like Thomas Moore, row 3) should be investigated — did the work happen? Was the PO ever used?",related:"Compare PO Date to Cumulative Expense and Current Period to assess whether a PO is active or stale. Also relevant for sponsored awards — charges must fall within the project period dates."},
+  col_po_status:{label:"P.O. Status",what:"A single-letter code indicating the current lifecycle state of the purchase order. 'D' = Dispatched — the PO has been approved and sent to the vendor, making it an active, legally binding commitment.",interpret:"All rows show 'D' (Dispatched), which is normal for any PO on an open commitment report. Other possible statuses include O = Open (created but not yet sent to vendor), C = Cancelled, X = Closed (fully paid and closed out). Only Dispatched POs create active encumbrances and appear on this report.",why:"Status 'D' combined with Budget Status 'Valid' confirms the PO is active and properly encumbering budget. A PO with cancelled or closed status should not appear here but may if there are timing issues during period close.",related:"Works with Budget Status. Both must be valid for the PO to create a legitimate encumbrance on the project."},
+  col_budget_status:{label:"Budget Status",what:"Indicates whether this purchase order passed Columbia's budget checking process and has confirmed available budget. 'Valid' = passed — sufficient budget exists to cover this commitment.",interpret:"'Valid' is the only status shown here because this report excludes POs with 'Error' or 'Not Chk'd' budget status — as stated in the warning note at the top of the report. If a PO you expected to see is missing, check ARC to see if its budget check failed.",why:"Budget Status Valid confirms the encumbrance is supported by actual budget authority. This is why the warning note matters: if a PO has budget errors, it doesn't appear here at all, potentially understating your true obligations.",related:"Directly tied to the warning note. POs in Error or Not Chk'd status are excluded from this report's open commitment totals, which is one reason this report may not match other encumbrance reports."},
+  col_vendor:{label:"Vendor",what:"The vendor name and Columbia-assigned vendor ID for the organization or individual the PO was issued to. Each vendor has a unique numeric ID in the ARC system.",interpret:"Vendor types vary significantly: individual consultants (Ian Vollmer, Samuel Beneitone), corporate firms (BrightEdge Technologies, Element451), and institutional subrecipients (Tuskegee University, Carnegie Mellon, McGill). The vendor type determines payment process, tax documentation requirements, and compliance obligations.",why:"Vendor identity drives compliance requirements. Individual consultants need W-9 or W-8 tax forms. Foreign vendors may require withholding. Institutional subrecipients (universities and nonprofits on SAPOS POs) require formal subcontract agreements and ongoing monitoring under 2 CFR 200.332.",related:"Click a vendor cell for context on the vendor type and its implications. Vendor ID connects to the ARC vendor master where payment history and documentation status can be reviewed."},
+  col_origin:{label:"Origin",what:"A code identifying the procurement pathway through which this PO was created. ENG = Engineering department-initiated PO entered through departmental workflow. ONL = Online PO created through Columbia's e-procurement portal. CRR = Contracts and Research Records — the origin code for subcontract POs processed through the sponsored projects office.",interpret:"ENG and ONL origin POs are for goods and services purchased by the department using standard procurement. CRR POs are exclusively subcontracts — formal agreements with other institutions to perform substantive sponsored research. The shift from ENG to ONL for newer POs (CU00 prefix) reflects the system upgrade.",why:"Origin affects approval workflow, documentation requirements, and compliance rules. CRR (subcontract) POs require the most documentation — a formal subcontract agreement, flow-down of all federal award terms, and ongoing subrecipient monitoring.",related:"Always appears together with Business Unit. SAPOS + CRR = subcontract. COLUM + ENG/ONL = departmental purchase."},
+  col_project:{label:"Project",what:"The project chartfield identifying which award or budget this PO is charged against. GG012345 = a federal NSF sponsored research grant (ENG Training). UR012345 = the Engineering school's Communications departmental operational budget.",interpret:"The project code determines which financial reports this PO encumbrance appears on and which budget is being consumed. A PO on the wrong project is a chartfield error requiring a PO modification. On sponsored awards, the project code also links to sponsor-specific allowability rules.",why:"Project is the primary budget owner for each PO. Encumbrances against GG012345 appear in the sponsored project financial reports; those against UR012345 appear in departmental budget reports.",related:"Project codes here correspond directly to the projects on the Sponsored Project Financial Report and Project Summary Statement, where these encumbrances appear as rolled-up totals."},
+  col_dept:{label:"Department",what:"The department chartfield — the organizational unit responsible for the purchase order. 5201234 = ENG Training (Engineering school's training department). 5209876 = ENG Training (Engineering school's research training unit).",interpret:"Department ownership confirms which unit's budget is being encumbered and which administrators have approval and oversight responsibility. A PO in the wrong department is a chartfield error.",why:"Department drives reporting, approval authority, and accountability. The department administrator receives financial reports showing these commitments and is responsible for budget monitoring.",related:"Used with Project and Account to form the full chartfield string for the PO."},
+  col_initiative:{label:"Initiative",what:"A chartfield segment that provides an additional layer of budget classification within the project and department combination. Initiative codes identify specific programs, activities, or funding streams within a department.",interpret:"Initiative codes like 31047, 47832, 25631, and 81347 subdivide spending by program area within the department. They allow more granular budget tracking and reporting than the project and department alone provide.",why:"Initiative codes enable department-level budget management at a more granular level than project and department. They also flow through to financial reports and can be used to filter or analyze spending by program.",related:"Works with Segment and Site to complete the full chartfield string. Important for departmental budget management and program-level reporting."},
+  col_segment:{label:"Segment",what:"A chartfield segment providing additional classification of the spending, often used to identify funding source, program type, or organizational sub-unit. Segment codes like 59001483 and 59007261 appear on Communications POs; ab1234 appears on all research admin POs.",interpret:"Segment codes help identify the funding source or program classification within the broader initiative. On sponsored projects, the segment may relate to the specific activity or funding stream within the grant. 00000000 indicates no specific segment designation.",why:"Segment codes enable more detailed financial analysis and reporting. They are particularly useful when a single project has multiple funding streams or program components that need to be tracked separately.",related:"Works with Initiative and Site to complete the chartfield string. Segment codes are used in chartfield-level financial reports and budget analysis."},
+  col_site:{label:"Site",what:"A chartfield segment identifying the physical location or site associated with the expenditure. On research administration POs, ab1234 appears consistently, indicating a specific site designation for the DBI project. Communications POs show no site code.",interpret:"Site codes are used when an organization operates across multiple physical locations and needs location-specific financial tracking. The consistent ab1234 on all GG012345 POs suggests a designated site for the research project.",why:"Site codes enable location-based financial reporting and budget management. They are particularly relevant for grants that include field research, multi-site programs, or geographically distributed activities.",related:"Works with Initiative and Segment as part of the full chartfield string."},
+  col_account:{label:"Account",what:"The natural account code classifying the type of expense. Account codes determine expense categorization in financial reports and whether costs are allowable under applicable regulations.",interpret:"Accounts on this report: 64505 (Consultants-General), 64540 (Marketing Consultants), 63260 (Software Purchase), 63010 (Rental-Facilities), 65020 (Subcontracts Out of MTDC), 61925 (Minor Equipment-Computers). Each has different allowability rules and F&A implications.",why:"Account code drives cost category classification on every financial report. An encumbrance on 64505 feeds the Consultants encumbrance on the SPFR. An encumbrance on 65020 feeds the Subcontracts encumbrance. Account also determines whether costs are included or excluded from the F&A (indirect cost) calculation base.",related:"Click the Account Description cell for a full explanation of each account. Account codes connect directly to the budget category rows on the Sponsored Project Financial Report."},
+  col_acct_desc:{label:"Account Description",what:"The plain-language name for the natural account code. Click any account description for a detailed explanation of what expenses belong in that category, how to interpret charges, and why the account matters.",interpret:"Account descriptions translate numeric codes into understandable expense categories, letting you quickly assess what type of commitment each PO represents without needing to memorize account numbers.",why:"Account classification drives allowability on sponsored awards, financial report categorization, and F&A calculations.",related:"Click the account description cell for each account to see full definitions and interpretation guidance."},
+  col_po_merch:{label:"P.O. Merchandise Amount",what:"The total authorized dollar value of the purchase order — the maximum amount that can be invoiced and paid against this PO without a formal Change Order.",interpret:"This is the contract ceiling. Invoices cannot exceed this amount without a PO amendment. Compare it to Cumulative Expense to see contract utilization. The largest POs are the Penn subcontract ($874,320) and Neuromatch ($625,000) — both on the sponsored research project.",why:"P.O. Merchandise Amount sets the maximum financial exposure for each vendor relationship. Monitoring it against spend helps identify contracts approaching their ceiling (which may need Change Orders) and fully unspent contracts (which may be stale).",related:"P.O. Merchandise Amount minus Cumulative Expense minus Current Period equals the approximate Open Commitment — though the report calculates this precisely in the last column."},
+  col_cumulative:{label:"Cumulative Expense",what:"The total amount invoiced, matched to this PO, budget-checked, and posted as actual expense from the PO's creation date through the report date.",interpret:"Cumulative Expense is the confirmed spend total. A $0 Cumulative Expense on an older PO (like Thomas Moore, dated 2023) is a red flag — the PO may never have been used. For newer POs dated 2025-2026, zero cumulative expense is normal if work just started.",why:"Comparing Cumulative Expense to P.O. Merchandise Amount reveals contract utilization. Near-exhausted contracts (>90% spent) may need Change Orders. POs with zero cumulative expense after many months should be reviewed for closure.",related:"Cumulative Expense feeds the Year-to-Date and Project-to-Date actual columns on the Sponsored Project Financial Report. It is the posted expense portion of the financial record."},
+  col_current_period:{label:"Current Period",what:"The dollar amount of invoices matched to this PO and budget-checked during the current accounting period only. This is a subset of Cumulative Expense for the most recent month.",interpret:"Most rows show 0.00 because no invoices posted in the current period. Non-zero values indicate recent invoicing: Samuel Beneitone ($1,375.00) posted a current-period invoice; McGill University ($52,180.00) and AVI Foodsystems ($1,378.44) also have current-period activity. These amounts will appear in the Month Actuals column on summary reports.",why:"Current Period activity helps reconcile what posted to Month Actuals on the Sponsored Project Financial Report. If Month Actuals shows an unexpected amount, reviewing Current Period on the PO report identifies which POs drove the charge.",related:"Feeds directly into the Month Actuals column on the Sponsored Project Financial Report and Project Summary Statement."},
+  col_open_vouchers:{label:"Open Vouchers",what:"Invoices entered into the accounts payable system and matched to this PO but not yet completed the budget check process. These represent payables in transition between invoice entry and final posting.",interpret:"All rows show 0.00 — no invoices are currently in the open voucher state. When open vouchers exist, they represent incoming charges that haven't fully posted yet, which can cause differences between this report and other encumbrance reports.",why:"Open Vouchers are one of the three causes of discrepancy noted in the warning message. When present, they represent amounts that will soon become Cumulative Expense but are not yet confirmed actuals.",related:"When Open Vouchers are non-zero, expect the Encumbrance to decrease on the next report run as those vouchers complete their budget check and convert to actuals."},
+  col_open_commitment:{label:"Current Period Open Commitment",what:"The remaining unspent balance on this purchase order — the encumbrance amount. Calculated as P.O. Merchandise Amount minus Cumulative Expense minus Current Period minus Open Vouchers.",interpret:"This is the most important column on the report. It shows exactly how much of each PO remains as a live budget obligation. These balances roll up to become the Encumbrance figures on the Sponsored Project Financial Report and Project Summary Statement. The largest open commitments are Element451 ($214,800), Neuromatch ($312,500), and the subcontract portfolio.",why:"Open Commitment is the source of all Encumbrance figures on summary financial reports. When an encumbrance looks too high or low on a summary report, this report — broken down by individual PO — shows which specific contracts are driving the figure.",related:"These balances correspond directly to the Encumbrance column on the Sponsored Project Financial Report. The total of all Open Commitments here should reconcile (within the caveats of the warning note) to the Encumbrance totals there."},
+  nav_prev_period:{label:"Previous Accounting Period",what:"Reloads this report for the accounting period immediately before the one currently displayed. Accounting periods follow the calendar month within Columbia's July-June fiscal year.",interpret:"Use to step back one month to compare open commitment balances, identify when a PO first appeared, or investigate how a balance changed after a specific event.",why:"Period-over-period comparison helps track how open commitments evolve — when POs are created, when invoices post, and when commitments close out.",related:"Use with Next Accounting Period to bracket a date range for analysis."},
+  nav_next_period:{label:"Next Accounting Period",what:"Advances this report forward by one accounting period to show the same project's open PO data for the following month.",interpret:"Use to see how commitments changed after the current period — which POs received invoices, which were closed, and whether new POs were created.",why:"Forward navigation confirms that expected invoices posted in the following period and that POs are progressing normally toward closure.",related:"Use with Previous Accounting Period to bracket analysis periods."},
+  nav_printable:{label:"Printable Version",what:"Reformats this report for clean printing or PDF export, removing navigation elements and optimizing for paper or document sharing.",interpret:"Use when attaching this report to audit documentation, grant progress reports, or budget review presentations.",why:"Financial reports are frequently required as attachments to compliance documentation. The printable version provides a clean, shareable format.",related:"Consider also exporting from ARC directly for Excel-based analysis."},
+  param_bu:{label:"PC Business Unit(s): ALL",what:"Filter controlling which Columbia business units are included. 'ALL' means POs from any business unit with charges to the selected projects will appear.",interpret:"Running with ALL ensures no POs are accidentally excluded. This captures both COLUM (standard) and SAPOS (subcontract) POs.",why:"Business unit filtering can exclude POs if set incorrectly. ALL gives the complete commitment picture.",related:"Works with Department and Project filters."},
+  param_po_id:{label:"PO ID(s): ALL",what:"Filter to include specific PO numbers or all POs. 'ALL' shows every PO for the selected projects.",interpret:"Filter to a specific PO ID when investigating a single contract. ALL provides the complete open commitment picture.",why:"ALL ensures no POs are missed when reconciling total encumbrances.",related:"Use specific PO filtering in ARC's Purchase Order Inquiry for detailed investigation."},
+  param_origin:{label:"Origin(s): ALL",what:"Filter to show only POs from specific procurement pathways or all origins. 'ALL' includes ENG, ONL, and CRR origins.",interpret:"Filtering to CRR alone would show only subcontracts. ALL gives the complete commitment picture including both departmental POs and subcontracts.",why:"When monitoring subcontract encumbrances specifically, filtering to CRR is efficient. For full encumbrance reconciliation, use ALL.",related:"Origin connects to the compliance pathway — CRR requires subcontract agreements and subrecipient monitoring."},
+  param_dept:{label:"Department(s): ALL",what:"Filter limiting the report to POs associated with specific departments. 'ALL' includes POs from any department charged to the selected projects.",interpret:"For projects managed by multiple departments, filtering to a specific department shows only that unit's PO activity.",why:"Multi-department projects can have POs entered by different units. ALL ensures no departmental POs are missed.",related:"Department filter is useful for departmental administrators viewing only their commitments."},
+  param_project:{label:"Projects: GG012345 / UR012345",what:"The most critical filter — limiting the report to POs charged to specific project IDs. This report covers GG012345 (ENG Training, an NSF sponsored award) and UR012345 (ENG Training, a departmental budget).",interpret:"Running for specific projects isolates commitment activity for those awards. These two projects differ significantly: GG012345 has large institutional subcontracts (SAPOS POs via CRR), while UR012345 has smaller consulting and software commitments (COLUM POs via ENG/ONL).",why:"Project filtering is the primary way to see all open commitments for a specific grant or budget. Always verify correct project IDs.",related:"Project IDs here correspond to the Project field on the Sponsored Project Financial Report and Project Summary Statement."},
+  param_activity:{label:"Activity ID(s): ALL",what:"Filter to specific sub-activities or budget periods within a project. 'ALL' includes all activities.",interpret:"For multi-year sponsored awards, filtering to a specific Activity ID shows only commitments tied to that budget year.",why:"Activity-level filtering is useful at year-end when confirming no commitments from a closed activity period remain open.",related:"Activity IDs correspond to the Activity Period field on the Sponsored Project Financial Report."},
+  param_vendor:{label:"Vendor(s): ALL",what:"Filter to show POs for a specific vendor or all vendors. 'ALL' shows every vendor.",interpret:"Filter to a specific vendor when managing a contractor relationship or confirming total commitment to a supplier.",why:"Vendor filtering is useful for vendor performance reviews and supplier commitment analysis.",related:"Vendor IDs connect to ARC vendor records for payment history and documentation."},
+  param_commit_type:{label:"Commitment Type: All Commitments",what:"Filter controlling whether the report shows only encumbrances (approved POs), only pre-encumbrances (requisitions), or all commitments.",interpret:"'All Commitments' includes both POs (encumbrances) and requisitions (pre-encumbrances). This report shows only POs because all rows have PO numbers — no open requisitions exist for these projects currently.",why:"Including both commitment types gives the most complete obligation picture. Filtering to PO-only would miss requisitions in the approval pipeline.",related:"Connects to the Encumbrance and Pre-Encumbrance columns on the Sponsored Project Financial Report."}
+};
+
+var ACCT_DEFS = {
+  "64505":{label:"CONSULTANTS-GENERAL",definition:"Payments to individuals or firms providing professional expertise under a consulting arrangement. Includes communications specialists, learning designers, photographers, writers, and general professional service providers.",interpret:"On UR012345 (Communications), these consultants support Engineering's communications and outreach activities. On GG012345 (sponsored), Neuromatch Inc. is classified here as a major consultant — verify this is appropriate vs. a subrecipient designation, which would require a SAPOS PO instead.",why:"Consulting costs require written agreements and must meet allowability standards. On sponsored awards, consultants cannot circumvent personnel ceilings. The distinction between a consultant (service provider) and a subrecipient (who performs substantive research) determines which compliance framework applies."},
+  "64540":{label:"MARKETING CONSULTANTS",definition:"Fees paid to individuals or firms providing marketing, branding, social media, graphic design, and communications strategy services.",interpret:"Marketing consultant POs on UR012345 cover photography, design, and communications strategy. Marketing costs are unallowable as direct costs on most federal sponsored awards — they are appropriate on operational departmental budgets like COMMUNICATIONS.",why:"Marketing costs are classified as unallowable on federal grants under Uniform Guidance. Ensuring these POs are on UR012345 (departmental) rather than GG012345 (federal sponsored) is essential for compliance."},
+  "63260":{label:"SOFTWARE PURCHASE",definition:"Purchase of software licenses, subscriptions, or one-time software purchases for university operations. BrightEdge Technologies appears on two POs — annual subscription renewals for an SEO and digital marketing analytics platform.",interpret:"Two BrightEdge POs (legacy 0000487231 and newer CU00203847) represent successive annual subscription renewals. Small remaining balances on both likely reflect the timing of final subscription period invoices.",why:"Software charged to sponsored awards must be project-specific and directly required for the research. BrightEdge is a marketing analytics tool — it belongs on the departmental COMMUNICATIONS budget, not on federal grants."},
+  "63010":{label:"RENTAL - FACILITIES",definition:"Payments for rental of physical space or facilities. On GG012345, AVI Foodsystems Inc. likely provides meeting space and food service for research-related events or convenings.",interpret:"CU00257684 has $1,378.44 in current period activity — a recent invoice posted for the facility rental. The small remaining balance ($160.18) suggests this PO is nearly fully consumed.",why:"Facility rental on sponsored awards must be directly related to approved project activities. Documentation of the meeting purpose and attendees is required for allowability."},
+  "65020":{label:"SUBCONTRACTS OUT OF MTDC",definition:"The portion of subcontract value exceeding $25,000 per subcontract per budget period, excluded from the Modified Total Direct Costs (MTDC) base. This means the University does not charge F&A (indirect costs) on these amounts above the threshold.",interpret:"All SAPOS subcontracts on GG012345 have both a 65010 line (first $25K, subject to F&A) and a 65020 line (amounts above $25K, excluded from F&A). The 65020 lines carry the large balances. Subrecipients include CUNY Research Foundation, Tuskegee, NY Hall of Science, Penn, McGill, Carnegie Mellon, and Stanford.",why:"The MTDC exclusion for subcontract amounts above $25K is a federal cost accounting requirement under Uniform Guidance. It prevents disproportionate indirect cost recovery on pass-through funding. Each subrecipient must be monitored for financial and programmatic performance."},
+  "61925":{label:"MINOR EQUIPMENT-COMPUTERS",definition:"Purchase of computer equipment below the capitalization threshold — laptops, monitors, peripherals, and related computing hardware not recorded as fixed assets.",interpret:"CDW Govt Inc PO CU00218473 for $2,340 shows $0 Cumulative Expense — the equipment was ordered but has not yet been received or invoiced. The $2,340 open commitment will remain until delivery and invoicing.",why:"Computer equipment on sponsored awards must be used directly for project purposes. Purchases near the end of a project period are scrutinized — equipment must be fully useful to the project within the award period."}
+};
+
+var PO_DEFS = {
+  "legacy":{label:"Legacy PO (0000xxxxxx)",what:"Purchase orders with ten-digit numeric IDs starting with 0000 were created in Columbia's legacy procurement system, predating the current ARC e-procurement module.",interpret:"Legacy POs from 2021-2023 with remaining open balances require review. A 2023 PO with $0 Cumulative Expense (Thomas Moore, $11,200 PO) may represent a stale commitment — work that never happened, or a vendor that was never paid. These should be reviewed periodically and closed if no longer active.",why:"Old open POs are a common audit finding. If a 2021 or 2022 PO still shows an open commitment but has had no recent invoicing, it may need to be closed in ARC to release the encumbered budget."},
+  "online":{label:"Online PO (CU00xxxxxx)",what:"Purchase orders created through Columbia's ARC e-procurement module are assigned CU00-prefix numbers. These follow the current procurement workflow with electronic approval, budget check, and vendor notification.",interpret:"CU00 POs represent current-system procurement. Higher numbers indicate more recent creation — CU00289413 from March 2026 is the newest on this report ($214,800 authorized). All CU00 POs went through current procurement controls.",why:"The CU00 format confirms the PO went through current electronic controls. CU00 POs have better audit trails and workflow documentation than legacy 0000 POs."},
+  "sapos":{label:"SAPOS / Subcontract PO (G-series)",what:"Sponsored Award POs use G-series numbers and are created exclusively for subcontracts on sponsored grants. Each G-series number represents a formal subcontract agreement with a specific external institution.",interpret:"Each G-series PO typically covers one budget period (project year) of the subcontract. A new G-series PO may be issued each year as the project renews. SAPOS POs always appear under the SAPOS Business Unit and CRR origin.",why:"SAPOS POs are subject to stricter controls than standard POs. They require a fully executed subcontract agreement, flow-down of all federal award terms, and ongoing subrecipient monitoring documentation including financial reports from the subrecipient institution."}
+};
+
+var VENDOR_DEFS = {
+  "individual":{label:"Individual Consultant",what:"A person hired under a personal services agreement to provide specific professional expertise. Individual consultants are sole proprietors or independent contractors, not university employees.",interpret:"Individual consultants (Ian Vollmer, John Zhao, Thomas Moore, Samuel Beneitone) provide services like photography, writing, and communications support. Each needs a signed consulting agreement with defined deliverables and payment schedule.",why:"Individual consultants require IRS Form W-9 for domestic payments or W-8BEN for foreign nationals. Payments to foreign individuals may require tax withholding. Treating employees as consultants to avoid benefits is not allowable."},
+  "firm":{label:"Corporate / Institutional Vendor",what:"An incorporated company or institution providing goods or services under a vendor agreement. Includes technology companies, design firms, staffing agencies, and research institutions.",interpret:"Corporate vendors on this report include BrightEdge Technologies (software), Isometric Studio and Element451 (design/marketing), CDW Govt Inc (equipment), AVI Foodsystems (facilities/catering), and Neuromatch Inc. (consulting/training). Each has a Columbia vendor ID and has been through vendor setup in ARC.",why:"Corporate vendors require W-9 for domestic entities or W-8BEN-E for foreign companies. Contracts should include standard Columbia terms and conditions. For large contracts, procurement approval thresholds may apply."},
+  "subrecipient":{label:"Subrecipient Institution",what:"A university, research institute, or nonprofit that receives a portion of a sponsored grant to perform substantive research — contributing intellectually to the project, not just providing services.",interpret:"Subrecipients on GG012345 include CUNY Research Foundation, Tuskegee University, New York Hall of Science, Penn, McGill, Carnegie Mellon, and Stanford. Each has a formal subcontract agreement based on Columbia's NSF prime award. These are not vendors — they are research partners.",why:"Under 2 CFR 200.332, Columbia must monitor each subrecipient: verify they are not on the federal debarment list, assess their risk, review their financial and progress reports, and ensure they comply with all federal award requirements. Failure to monitor is a major audit finding."}
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+var allClickables=[], tabIndex=-1, activeEl=null, activeKey=null;
+function buildTabList(){allClickables=Array.from(document.querySelectorAll('.clickable, .p-val'));}
+
+function openPanel(key,el,type){
+  if(activeEl===el && activeKey===key){closePanel();return;}
+  if(activeEl)activeEl.classList.remove('active');
+  activeEl=el; activeKey=key; el.classList.add('active');
+  if(type==='field')tabIndex=allClickables.indexOf(el);
+  updateTabCounter();
+  if(type==='field') renderField(key);
+  else if(type==='acct') renderAcct(key);
+  else if(type==='po') renderPO(key);
+  else if(type==='vendor') renderVendor(key);
+}
+
+function closePanel(){
+  document.getElementById('explain-panel').classList.remove('open');
+  if(activeEl){activeEl.classList.remove('active');activeEl=null;}
+  activeKey=null; tabIndex=-1; updateTabCounter();
+}
+
+function panel(html){
+  document.getElementById('explain-content').innerHTML=html;
+  document.getElementById('explain-panel').classList.add('open');
+  document.getElementById('explain-inner').scrollTop=0;
+}
+
+function badge(cls,text){return '<div class="tip-badge '+cls+'">'+text+'</div>';}
+function sec(badgeHtml,body){return '<div class="explain-section">'+badgeHtml+'<div class="explain-section-body">'+body+'</div></div>';}
+
+function renderField(key){
+  var d=FIELDS[key]; if(!d)return;
+  var isNav=key.indexOf('nav_')===0, isWarn=key==='warning_note', isPar=key.indexOf('param_')===0;
+  var bc=isWarn?'warn-badge':isNav||isPar?'nav-badge':'';
+  panel('<div class="explain-field-name">'+d.label+'</div>'+
+    sec(badge(bc,'WHAT IT IS'),d.what)+
+    sec(badge(bc,'HOW TO INTERPRET'),d.interpret)+
+    sec(badge(bc,'WHY IT MATTERS'),d.why)+
+    (d.related?sec(badge(bc,'RELATED FIELDS'),d.related):''));
+}
+
+function renderAcct(code){
+  var d=ACCT_DEFS[code]; if(!d)return;
+  panel('<div class="explain-field-name">'+code+' &ndash; '+d.label+'</div>'+
+    sec(badge('acct-badge','WHAT IT COVERS'),d.definition)+
+    sec(badge('acct-badge','HOW TO INTERPRET'),d.interpret)+
+    sec(badge('acct-badge','WHY IT MATTERS'),d.why));
+}
+
+function renderPO(type){
+  var d=PO_DEFS[type]; if(!d)return;
+  panel('<div class="explain-field-name">'+d.label+'</div>'+
+    sec(badge('','PO TYPE'),d.what)+
+    sec(badge('','HOW TO INTERPRET'),d.interpret)+
+    sec(badge('','WHY IT MATTERS'),d.why));
+}
+
+function renderVendor(type){
+  var d=VENDOR_DEFS[type]; if(!d)return;
+  panel('<div class="explain-field-name">'+d.label+'</div>'+
+    sec(badge('vendor-badge','VENDOR TYPE'),d.what)+
+    sec(badge('vendor-badge','HOW TO INTERPRET'),d.interpret)+
+    sec(badge('vendor-badge','WHY IT MATTERS'),d.why));
+}
+
+function updateTabCounter(){
+  var c=document.getElementById('tab-counter');
+  if(tabIndex>=0){c.textContent='Field '+(tabIndex+1)+' of '+allClickables.length;c.classList.add('visible');}
+  else c.classList.remove('visible');
+}
+
+// Column headers and generic clickables
+document.querySelectorAll('.clickable').forEach(function(el){
+  el.addEventListener('click',function(e){e.stopPropagation();openPanel(this.getAttribute('data-key'),this,'field');});
+  el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openPanel(this.getAttribute('data-key'),this,'field');}});
+});
+
+// Params (p-val)
+document.querySelectorAll('.p-val').forEach(function(el){
+  el.addEventListener('click',function(e){e.stopPropagation();openPanel(this.getAttribute('data-key'),this,'field');});
+});
+
+// Account descriptions
+document.querySelectorAll('.acct-desc-cell').forEach(function(el){
+  el.addEventListener('click',function(e){e.stopPropagation();openPanel(this.getAttribute('data-acct'),this,'acct');});
+});
+
+// PO numbers
+document.querySelectorAll('.po-cell').forEach(function(el){
+  el.addEventListener('click',function(e){e.stopPropagation();openPanel(this.getAttribute('data-po'),this,'po');});
+});
+
+// Vendors
+document.querySelectorAll('.vendor-cell').forEach(function(el){
+  el.addEventListener('click',function(e){e.stopPropagation();openPanel(this.getAttribute('data-vendor'),this,'vendor');});
+});
+
+// Keyboard
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){closePanel();return;}
+  if(e.key==='Tab'){
+    var open=document.getElementById('explain-panel').classList.contains('open');
+    if(!open&&tabIndex===-1)return;
+    e.preventDefault();
+    tabIndex=e.shiftKey?(tabIndex<=0?allClickables.length-1:tabIndex-1):(tabIndex>=allClickables.length-1?0:tabIndex+1);
+    var el=allClickables[tabIndex],key=el.getAttribute('data-key');
+    if(activeEl)activeEl.classList.remove('active');
+    activeEl=el;activeKey=key;el.classList.add('active');
+    el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    renderField(key);updateTabCounter();
+  }
+});
+
+document.getElementById('table-scroll-area').addEventListener('scroll',function(){
+  document.getElementById('report-thead').classList.toggle('scrolled-past',this.scrollTop>0);
+});
+buildTabList();
+</script>
+</body>
+</html>
