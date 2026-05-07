@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Columbia University – Purchase Order Open Commitment (Training)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #111; background: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+  #report-panel { flex: 1 1 auto; background: #fff; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  #report-static { flex-shrink: 0; background: #fff; z-index: 10; }
+  #table-scroll-area { flex: 1 1 auto; overflow-x: scroll; overflow-y: auto; position: relative; min-height: 0; }
+
+  .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px 12px 5px; border-bottom: 1px solid #ccc; background: #fff; gap: 10px; }
+  .nav-bar a { color: #00419e; text-decoration: none; font-size: 11px; font-weight: bold; white-space: nowrap; }
+  .nav-bar a:hover { text-decoration: underline; }
+
+  .top-header { display: flex; align-items: flex-start; padding: 4px 10px 2px; }
+  .logo-area { display: flex; align-items: center; gap: 3px; min-width: 160px; flex-shrink: 0; }
+  .logo-crown { font-size: 15px; color: #003087; }
+  .logo-text .cu-name { font-size: 9px; font-weight: bold; color: #003087; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.2; }
+  .logo-text .cu-sub { font-size: 6px; color: #003087; text-transform: uppercase; letter-spacing: 0.3px; }
+  .center-titles { flex: 1; text-align: center; line-height: 1.4; }
+  .center-titles .fds { font-size: 9px; color: #333; font-style: italic; }
+  .center-titles .t1  { font-size: 12px; font-weight: bold; }
+  .center-titles .t2  { font-size: 11px; font-weight: bold; }
+  .center-titles .t3  { font-size: 10px; }
+  .run-info { text-align: right; font-size: 10px; color: #111; white-space: nowrap; min-width: 150px; }
+
+  .warning-note {
+    padding: 3px 10px 2px;
+    font-size: 8.5px;
+    color: #cc0000;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .meta-row-bar { padding: 2px 10px 3px; display: flex; justify-content: space-between; font-size: 10px; border-top: 1px solid #ddd; border-bottom: 1px solid #aaa; gap: 18px; }
+  .meta-left-items { display: flex; gap: 14px; flex-wrap: wrap; }
+  .meta-item { display: flex; gap: 3px; }
+  .meta-label { font-weight: bold; }
+  .printable-link { color: #00419e; font-weight: bold; cursor: default; text-decoration: underline; font-size: 10px; }
+
+  .params-bar { padding: 2px 10px 3px; font-size: 8.5px; color: #111; border-bottom: 1px solid #888; line-height: 1.45; }
+  .params-bar .p-label { font-weight: bold; }
+  .params-bar .p-val { color: #00419e; cursor: default; border-radius: 2px; padding: 0 1px; }
+
+  .clickable { cursor: default; border-radius: 2px; padding: 0 1px; }
+
+  @keyframes hint-pulse { 0% { box-shadow: 0 0 0 0 rgba(0,48,135,0.5); } 70% { box-shadow: 0 0 0 6px rgba(0,48,135,0); } 100% { box-shadow: 0 0 0 0 rgba(0,48,135,0); } }
+  .first-hint { animation: hint-pulse 1.4s ease 0.9s 2; border-radius: 2px; }
+
+  .pill-bar-wrap {
+    padding: 5px 12px 4px;
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .pill-bar-label {
+    font-size: 8.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #999;
+    white-space: nowrap;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 11px 3px 8px;
+    border-radius: 100px;
+    border: 1.5px solid #bbb;
+    background: #fff;
+    font-size: 9.5px;
+    font-weight: bold;
+    cursor: default;
+    transition: all 0.15s ease;
+    user-select: none;
+    color: #444;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+  .pill-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .pill:hover { border-color: #555; color: #111; }
+
+  .pill[data-pill="overview"] .pill-dot { background:#7c8aa5; }
+  .pill[data-pill="overview"].pill-on { background:#eef2f8; border-color:#9aa7bd; color:#46556f; }
+  .pill[data-pill="walkthrough"] .pill-dot { background:#4f8fd6; }
+  .pill[data-pill="walkthrough"].pill-on { background:#eaf3ff; border-color:#8cb4e3; color:#003087; }
+  .pill[data-pill="poinfo"] .pill-dot { background:#c2410c; }
+  .pill[data-pill="poinfo"].pill-on { background:#ffedd5; border-color:#c2410c; color:#9a3412; }
+  .pill[data-pill="chartfields"] .pill-dot { background:#0e7490; }
+  .pill[data-pill="chartfields"].pill-on { background:#d0f0f8; border-color:#0e7490; color:#0a5c6e; }
+  .pill[data-pill="spend"] .pill-dot { background:#c97b00; }
+  .pill[data-pill="spend"].pill-on { background:#fff3d6; border-color:#8a4b00; color:#8a4b00; }
+  .pill[data-pill="open"] .pill-dot { background:#7c3aed; }
+  .pill[data-pill="open"].pill-on { background:#ede9fe; border-color:#5b21b6; color:#5b21b6; }
+
+  @keyframes hlShimmer { 0%{background-position:-200% center,0 0} 100%{background-position:300% center,0 0} }
+  @keyframes hlBeat    { 0%,100%{filter:brightness(1)} 45%{filter:brightness(1.25)} }
+  @keyframes hlIn      { from{opacity:0;transform:translateX(4px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes glowBreathe { 0%,100%{opacity:.45} 50%{opacity:1} }
+
+  th.hl-hdr {
+    position:relative !important; overflow:hidden !important;
+    background-image:
+      linear-gradient(105deg,rgba(255,255,255,0) 20%,rgba(255,255,255,.55) 50%,rgba(255,255,255,0) 80%),
+      linear-gradient(var(--hl-fill),var(--hl-fill)) !important;
+    background-size:200% 100%,100% 100% !important;
+    background-position:-200% center,0 0 !important;
+    animation:hlShimmer 2.6s ease-in-out infinite !important;
+    border-left:1.5px solid var(--hl-line) !important;
+    border-right:1.5px solid var(--hl-line) !important;
+    border-top:2px solid var(--hl-line) !important;
+    border-bottom:3px solid var(--hl-strong) !important;
+    color:var(--hl-text) !important;
+  }
+  td.hl-cell {
+    background:var(--hl-cell) !important;
+    border-left:1px solid var(--hl-soft) !important;
+    border-right:1px solid var(--hl-soft) !important;
+    color:var(--hl-text) !important;
+    font-weight:700 !important;
+    animation:hlBeat 2.8s ease-in-out infinite,hlIn .35s ease both !important;
+  }
+  .hl-glow-strip {
+    position:absolute; pointer-events:none; z-index:3; top:0;
+    background:radial-gradient(ellipse 60% 55% at 50% 50%, var(--hl-radial-center) 0%, var(--hl-radial-mid) 70%, transparent 100%);
+    animation:glowBreathe 2.8s ease-in-out infinite;
+  }
+  .hl-glow-strip::before,.hl-glow-strip::after {
+    content:''; position:absolute; top:0; bottom:0; width:2px;
+    background:linear-gradient(180deg,transparent 0%,var(--hl-edge) 8%,var(--hl-edge) 92%,transparent 100%);
+    animation:glowBreathe 2.8s ease-in-out infinite;
+  }
+  .hl-glow-strip::before { left:0; }
+  .hl-glow-strip::after  { right:0; }
+
+  .overview-panel-wrap { padding:6px 10px 8px; border-bottom:1px solid #d9dfe8; background:#f8fbff; display:none; flex-shrink:0; }
+  .overview-panel-wrap.open { display:block; }
+  .overview-panel-card { border:1px solid #d4dfef; background:#fff; border-radius:8px; padding:7px 10px; }
+  .overview-panel-title { font-size:10px; font-weight:bold; color:#003087; margin-bottom:3px; }
+  .overview-panel-body { font-size:9px; line-height:1.55; color:#233; }
+  .overview-panel-list { margin-top:4px; padding-left:14px; }
+  .overview-panel-list li { margin:1px 0; }
+
+  .table-wrap { padding: 0 4px 4px; position: relative; }
+  table.rt { border-collapse: collapse; font-size: 8px; table-layout: auto; white-space: nowrap; }
+
+
+
+  .rt thead { position: sticky; top: 0; z-index: 5; background: #fff; }
+  .rt thead tr.hdr-row th {
+    background: #fff;
+    text-align: right;
+    font-weight: bold;
+    font-size: 7.7px;
+    padding: 2px 4px;
+    border-top: 1px solid #888;
+    border-bottom: 2px solid #888;
+    vertical-align: bottom;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: default;
+  }
+  .rt thead tr.hdr-row th:hover {
+    outline: 1.5px solid #003087;
+    background: #f0f4fa;
+  }
+  .rt thead tr.hdr-row th.left { text-align: left; }
+  .rt thead tr.hdr-row th.cntr { text-align: center; }
+  .rt tbody td { padding: 1px 6px; white-space: nowrap; vertical-align: top; font-size: 8px; }
+  .rt tbody td.r { text-align: right; }
+  .rt tbody td.c { text-align: center; }
+  .rt tbody td.open-blue { text-align: right; color: #00419e; }
+  .rt tbody tr:hover td { background: #f6f6f6; }
+
+  td.po-cell { cursor: default; color: #00419e; font-weight: bold; border-radius: 2px; }
+  td.vendor-cell { cursor: default; border-radius: 2px; }
+  td.acct-desc-cell { cursor: default; color: #003087; border-radius: 2px; }
+
+  .glossary-title { font-size:9px; font-weight:bold; text-transform:uppercase; letter-spacing:.08em; color:#003087; margin:10px 0 4px; border-top:1px solid #dde; padding-top:8px; }
+  .glossary-table { width:100%; border-collapse:collapse; font-size:9px; margin-bottom:4px; }
+  .glossary-table th { background:#003087; color:#fff; padding:2px 4px; text-align:left; font-size:8.5px; font-weight:bold; white-space:nowrap; }
+  .glossary-table td { padding:2px 4px; border-bottom:1px solid #eee; vertical-align:top; line-height:1.4; }
+  .glossary-table tr:nth-child(even) td { background:#f5f7fc; }
+  .glossary-table td:first-child { font-weight:bold; color:#003087; white-space:nowrap; min-width:30px; }
+  .glossary-table td:nth-child(2) { color:#333; min-width:90px; }
+  .glossary-table td:nth-child(3) { color:#555; }
+  .dept-hierarchy-wrap { margin-top:10px; border:1px solid #d8deea; border-radius:12px; background:#f8fafe; padding:10px; }
+  .dept-hierarchy-head { font-size:11px; font-weight:bold; color:#003087; margin-bottom:4px; }
+  .dept-hierarchy-sub { font-size:9px; color:#556; line-height:1.5; margin-bottom:10px; }
+  .guide-pill-group { margin-top:10px; }
+  .guide-pill-toggle { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid #b9c9e6; background:#fff; color:#003087; font-size:8.5px; font-weight:bold; letter-spacing:.02em; cursor:pointer; user-select:none; transition:all .15s ease; }
+  .guide-pill-toggle span:first-child { white-space:nowrap; }
+  .guide-pill-toggle:hover { border-color:#7aa6da; background:#f5f9ff; }
+  .guide-pill-toggle.open { background:#eaf3ff; border-color:#4f8fd6; color:#002b73; }
+  .guide-pill-toggle.dept-subpill { font-size:8px; padding:4px 9px; }
+  .guide-pill-toggle.dept-admin-pill { background:#edf7f1; border-color:#9bc9aa; color:#1f5e37; box-shadow:inset 0 0 0 1px rgba(31,94,55,.05); }
+  .guide-pill-toggle.dept-admin-pill:hover { background:#e3f2e8; border-color:#74b48a; }
+  .guide-pill-toggle.dept-admin-pill.open { background:#d8ecdf; border-color:#4e9a6a; color:#184c2c; }
+  .guide-pill-toggle.dept-academic-pill { background:#eef4ff; border-color:#9fb9ea; color:#244e97; box-shadow:inset 0 0 0 1px rgba(36,78,151,.05); }
+  .guide-pill-toggle.dept-academic-pill:hover { background:#e5efff; border-color:#7aa0df; }
+  .guide-pill-toggle.dept-academic-pill.open { background:#dce9ff; border-color:#4f84d6; color:#173d7a; }
+  .guide-pill-toggle.dept-centers-pill { background:#f5efff; border-color:#bea6ec; color:#6440a8; box-shadow:inset 0 0 0 1px rgba(100,64,168,.05); }
+  .guide-pill-toggle.dept-centers-pill:hover { background:#efe6ff; border-color:#a07ee0; }
+  .guide-pill-toggle.dept-centers-pill.open { background:#e8dcff; border-color:#8559d6; color:#4e2e8e; }
+  .guide-pill-caret { font-size:8px; line-height:1; }
+  .guide-pill-panel { display:none; margin-top:6px; }
+  .guide-pill-panel.open { display:block; }
+  .footnotes { padding: 4px 10px 6px; font-size: 8.5px; color: #444; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
+
+  #explain-panel { width: 0; min-width: 0; overflow: hidden; background: #fafafa; border-left: 3px solid #003087; transition: width 0.28s ease, min-width 0.28s ease; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; }
+  #explain-panel.open { width: 315px; min-width: 300px; }
+  .panel-header { background: #003087; color: #fff; padding: 8px 12px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; min-width: 300px; flex-shrink: 0; }
+  .panel-header button { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; }
+  .panel-header button:hover { opacity: 0.7; }
+  #explain-inner { padding: 13px; overflow-y: auto; flex: 1; min-width: 300px; }
+  .explain-field-name { font-size: 15px; font-weight: bold; color: #003087; margin-bottom: 9px; border-bottom: 1px solid #ccd; padding-bottom: 5px; }
+  .explain-section { margin-bottom: 11px; }
+  .tip-badge { display: inline-block; background: #003087; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 2px; margin-bottom: 4px; letter-spacing: 0.3px; }
+  .tip-badge.warn-badge { background:#cc0000; }
+  .tip-badge.vendor-badge { background:#8b5500; }
+  .tip-badge.acct-badge { background:#1a5c1a; }
+  .explain-section-body { font-size: 12px; color: #222; line-height: 1.6; }
+  .training-badge { position: fixed; bottom: 10px; left: 10px; background: #003087; color: #fff; font-size: 9.5px; padding: 3px 9px; border-radius: 10px; z-index: 999; }
+  .walkthrough-controls { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .walkthrough-mini { padding:3px 9px; border-radius:999px; border:1px solid #b9c9e6; background:#fff; color:#003087; font-size:8.5px; font-weight:bold; cursor:pointer; }
+  .walkthrough-mini:hover { background:#f5f9ff; }
+  /* Force horizontal scrollbar always visible */
+  #table-scroll-area::-webkit-scrollbar { height: 12px; }
+  #table-scroll-area::-webkit-scrollbar-track { background: #ddd; }
+  #table-scroll-area::-webkit-scrollbar-thumb { background: #888; border-radius: 6px; }
+  #table-scroll-area { scrollbar-width: auto; scrollbar-color: #888 #ddd; }
+</style>
+</head>
+<body>
+<div id="report-panel">
+  <div id="report-static">
+    <div class="nav-bar">
+      <a href="#">&lt; Previous Accounting Period</a>
+      <a href="#">Financial Data Store</a>
+      <a href="#">Next Accounting Period &gt;</a>
+    </div>
+
+    <div class="top-header">
+      <div class="logo-area">
+        <div class="logo-crown">♛</div>
+        <div class="logo-text">
+          <div class="cu-name">Columbia University</div>
+          <div class="cu-sub">In the City of New York</div>
+        </div>
+      </div>
+      <div class="center-titles">
+        <div class="fds">Financial Data Store</div>
+        <div class="t1">Columbia University</div>
+        <div class="t2">Purchase Order Open Commitment</div>
+        <div class="t3">As of 4/7/2026</div>
+      </div>
+      <div class="run-info">
+        <div><span class="printable-link clickable" data-key="nav_printable">Printable Version</span></div>
+      </div>
+    </div>
+
+    <div class="warning-note clickable" data-key="warning_note">
+      *When running this report, encumbrances may not match encumbrances on other reports (ChartField Statement, Project Lifecycle, Trial Balance). This can be due to period end accruals, Change Orders pending budget check and Vouchers that have been matched to PO’s but not budget checked. Open Commitment balances will not include amounts which are in Budget Check Exception (i.e. Where Budget Status is “Error” or “Not Chk’d”). To review your encumbrances in ARC, please refer to the “Purchase Order Activity Summary Inquiry” job aid.
+    </div>
+
+    <div class="meta-row-bar">
+      <div class="meta-left-items">
+        <div class="meta-item"><span class="meta-label">Report ID:</span><span>PO_RPT2001</span></div>
+        <div class="meta-item"><span class="meta-label">Run ID:</span><span>mwt2112</span></div>
+      </div>
+      <div class="meta-left-items">
+        <div class="meta-item"><span class="meta-label">Run Date:</span><span>04/07/2026</span></div>
+        <div class="meta-item"><span class="meta-label">Run Time:</span><span>5:17:31PM</span></div>
+      </div>
+    </div>
+
+    <div class="params-bar">
+      <span class="p-label">PARAMETERS: </span>
+      <span class="p-val clickable" data-key="param_bu">PC Business Unit(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_po_id">PO ID(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_origin">Origin(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_dept">Department(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_project">Projects: GG012345 - ENG Training, UR012345 - ENG Training</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_activity">Activity ID(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_vendor">Vendor(s): ALL</span>; &nbsp;
+      <span class="p-val clickable" data-key="param_commit_type">Commitment Type: All Commitments</span>
+    </div>
+
+    <div class="overview-panel-wrap" id="overview-panel">
+      <div class="overview-panel-card">
+        <div class="overview-panel-title">What this report helps you do</div>
+        <div class="overview-panel-body">
+          The Purchase Order Open Commitment report shows which POs are still reserving budget and how much remains outstanding on each one.
+          <ul class="overview-panel-list">
+            <li>See which specific purchase orders are driving encumbrances</li>
+            <li>Compare total PO amount to posted expense and open balance</li>
+            <li>Spot stale or unused commitments that may need cleanup</li>
+            <li>Distinguish standard departmental POs from sponsored subcontracts</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="pill-bar-wrap" id="pill-bar" style="display:none;">
+      <span class="pill-bar-label">Highlight:</span>
+      <div class="pill" data-pill="overview" onclick="toggleOverviewPill(this)"><span class="pill-dot"></span> What this report does</div>
+      <div class="pill" data-pill="walkthrough" onclick="startWalkthrough(this)"><span class="pill-dot"></span> Guided Walkthrough</div>
+      <div class="pill" data-pill="poinfo" onclick="togglePill(this)"><span class="pill-dot"></span> PO Details</div>
+      <div class="pill" data-pill="chartfields" onclick="togglePill(this)"><span class="pill-dot"></span> Chartfields</div>
+      <div class="pill" data-pill="spend" onclick="togglePill(this)"><span class="pill-dot"></span> Spend Activity</div>
+      <div class="pill" data-pill="open" onclick="togglePill(this)"><span class="pill-dot"></span> Open Commitment</div>
+      <span style="margin-left:auto;font-size:8px;color:#bbb;letter-spacing:.06em;">← → to navigate &nbsp; ↓ to hide</span>
+    </div>
+  </div>
+
+  <div id="table-scroll-area">
+    <div class="table-wrap" id="table-wrap">
+      <table class="rt" id="main-table">
+        <colgroup>
+          <col class="c-bu"><col class="c-po"><col class="c-date"><col class="c-status"><col class="c-budst"><col class="c-vendor"><col class="c-origin"><col class="c-project"><col class="c-dept"><col class="c-init"><col class="c-seg"><col class="c-site"><col class="c-acct"><col class="c-acctdesc"><col class="c-poma"><col class="c-cumexp"><col class="c-ov"><col class="c-open">
+        </colgroup>
+        <thead>
+          <tr class="hdr-row">
+            <th class="left col-poinfo">P.O. Business Unit</th>
+            <th class="left col-poinfo">P.O. Number</th>
+            <th class="left col-poinfo">P.O. Date</th>
+            <th class="cntr col-poinfo">P.O. Status</th>
+            <th class="cntr col-poinfo">Budget Status</th>
+            <th class="left col-poinfo">Vendor</th>
+            <th class="cntr col-poinfo">Origin</th>
+            <th class="left col-chartfields">Project</th>
+            <th class="left col-chartfields">Department</th>
+            <th class="left col-chartfields">Initiative</th>
+            <th class="left col-chartfields">Segment</th>
+            <th class="cntr col-chartfields">Site</th>
+            <th class="left col-chartfields">Account</th>
+            <th class="left col-chartfields">Account Description</th>
+            <th class="col-spend">P.O. Merchandise Amount</th>
+            <th class="col-spend">Cumulative Expense</th>
+                        <th class="col-open">Open Vouchers</th>
+            <th class="col-open">Open Commitment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000394712</td><td>09/10/2021</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000741823 - IAN VOLLMER</td><td class="c clickable" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>31047</td><td>00000000</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r col-spend">22,500.00</td><td class="r col-spend">13,874.26</td><td class="r col-open">0.00</td><td class="open-blue col-open">8,625.74</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000418563</td><td>07/18/2022</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000856249 - JOHN XUEYANG ZHAO</td><td class="c clickable" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>47832</td><td>59001483</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r col-spend">9,750.00</td><td class="r col-spend">8,137.50</td><td class="r col-open">0.00</td><td class="open-blue col-open">1,612.50</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000451829</td><td>03/31/2023</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000319874 - THOMAS MOORE</td><td class="c clickable" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>63519</td><td>00000000</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r col-spend">11,200.00</td><td class="r col-spend">0.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">11,200.00</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000463074</td><td>07/06/2023</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000628413 - ANNA BUZINOVA COLLEVECCHIO</td><td class="c clickable" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>18274</td><td>59007261</td><td class="c">-</td><td>64540</td><td class="acct-desc-cell" data-acct="64540">MARKETING CONSULTANTS</td><td class="r col-spend">4,500.00</td><td class="r col-spend">2,475.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">2,025.00</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="legacy">0000487231</td><td>11/22/2023</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000457892 - BrightEdge Technologies, Inc.</td><td class="c clickable" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>25631</td><td>00000000</td><td class="c">-</td><td>63260</td><td class="acct-desc-cell" data-acct="63260">SOFTWARE PURCHASE</td><td class="r col-spend">21,600.00</td><td class="r col-spend">19,440.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">2,160.00</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">0000512947</td><td>05/22/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000583016 - Isometric Studio, Inc.</td><td class="c clickable" data-key="col_origin">ENG</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>41896</td><td>00000000</td><td class="c">-</td><td>64540</td><td class="acct-desc-cell" data-acct="64540">MARKETING CONSULTANTS</td><td class="r col-spend">55,000.00</td><td class="r col-spend">47,300.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">7,700.00</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">CU00203847</td><td>08/06/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000457892 - BrightEdge Technologies, Inc.</td><td class="c clickable" data-key="col_origin">ONL</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>38715</td><td>00000000</td><td class="c">-</td><td>63260</td><td class="acct-desc-cell" data-acct="63260">SOFTWARE PURCHASE</td><td class="r col-spend">22,418.50</td><td class="r col-spend">14,936.20</td><td class="r col-open">0.00</td><td class="open-blue col-open">7,482.30</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">CU00241956</td><td>11/19/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="individual">0000724651 - Samuel Beneitone</td><td class="c clickable" data-key="col_origin">ONL</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>54028</td><td>00000000</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r col-spend">8,250.00</td><td class="r col-spend">2,062.50</td><td class="r col-open">0.00</td><td class="open-blue col-open">4,812.50</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">CU00289413</td><td>03/30/2026</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000391847 - Element451, Inc.</td><td class="c clickable" data-key="col_origin">ONL</td><td>UR012345 - ENG Training</td><td>5201234 - ENG Training</td><td>72493</td><td>59002847</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r col-spend">214,800.00</td><td class="r col-spend">0.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">214,800.00</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">CU00248731</td><td>11/26/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000967324 - Neuromatch, Inc.</td><td class="c clickable" data-key="col_origin">ONL</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>81347</td><td>ab1234</td><td class="c">-</td><td>64505</td><td class="acct-desc-cell" data-acct="64505">CONSULTANTS-GENERAL</td><td class="r col-spend">625,000.00</td><td class="r col-spend">312,500.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">312,500.00</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">CU00257684</td><td>12/29/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000814563 - AVI FOODSYSTEMS INC</td><td class="c clickable" data-key="col_origin">ONL</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>83924</td><td>ab1234</td><td class="c">-</td><td>63010</td><td class="acct-desc-cell" data-acct="63010">RENTAL - FACILITIES</td><td class="r col-spend">3,180.00</td><td class="r col-spend">1,641.38</td><td class="r col-open">0.00</td><td class="open-blue col-open">160.18</td></tr>
+          <tr><td>COLUM</td><td class="po-cell" data-po="online">CU00218473</td><td>10/10/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="firm">0000502938 - CDW GOVT INC</td><td class="c clickable" data-key="col_origin">ONL</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>76512</td><td>ab1234</td><td class="c">-</td><td>61925</td><td class="acct-desc-cell" data-acct="61925">MINOR EQUIPMENT-COMPUTERS</td><td class="r col-spend">2,340.00</td><td class="r col-spend">0.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">2,340.00</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G21847</td><td>08/09/2023</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000176429 - RESEARCH FOUNDATION OF THE CITY UNIVERSI</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>93041</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">284,500.00</td><td class="r col-spend">171,283.47</td><td class="r col-open">0.00</td><td class="open-blue col-open">113,216.53</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G21963</td><td>02/28/2024</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000843716 - Tuskegee University</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>91628</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">318,750.00</td><td class="r col-spend">192,406.15</td><td class="r col-open">0.00</td><td class="open-blue col-open">126,343.85</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22014</td><td>08/09/2023</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000295847 - NEW YORK HALL OF SCIENCE</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>94357</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">402,000.00</td><td class="r col-spend">247,930.52</td><td class="r col-open">0.00</td><td class="open-blue col-open">154,069.48</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22385</td><td>03/12/2024</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000738152 - Trustees of the University of Pennsylvan</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>97283</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">874,320.00</td><td class="r col-spend">731,884.16</td><td class="r col-open">0.00</td><td class="open-blue col-open">142,435.84</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22741</td><td>04/25/2024</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000619473 - McGill University/Royal Institution for</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>90174</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">341,500.00</td><td class="r col-spend">98,274.63</td><td class="r col-open">0.00</td><td class="open-blue col-open">191,045.37</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22698</td><td>04/25/2024</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000176429 - RESEARCH FOUNDATION OF THE CITY UNIVERSI</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>92846</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">88,400.00</td><td class="r col-spend">0.00</td><td class="r col-open">0.00</td><td class="open-blue col-open">88,400.00</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G22853</td><td>04/25/2024</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000482715 - CARNEGIE MELLON UNIVERSITY</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>95162</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">498,600.00</td><td class="r col-spend">412,783.29</td><td class="r col-open">0.00</td><td class="open-blue col-open">85,816.71</td></tr>
+          <tr><td>SAPOS</td><td class="po-cell" data-po="sapos">G23176</td><td>10/04/2025</td><td class="c clickable" data-key="col_po_status">D</td><td class="c clickable" data-key="col_budget_status">Valid</td><td class="vendor-cell" data-vendor="subrecipient">0000357928 - Board of Trustees of the Leland Sta, The</td><td class="c clickable" data-key="col_origin">CRR</td><td>GG012345 - ENG Training</td><td>5209876 - ENG Training</td><td>98435</td><td>ab1234</td><td class="c">-</td><td>65020</td><td class="acct-desc-cell" data-acct="65020">SUBCONTRACTS OUT OF MTDC</td><td class="r col-spend">267,150.00</td><td class="r col-spend">178,392.41</td><td class="r col-open">0.00</td><td class="open-blue col-open">88,757.59</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="footnotes"><span>Columbia University Proprietary and Confidential</span><span>Page No. 1</span></div>
+  </div>
+</div>
+
+<div id="explain-panel">
+  <div class="panel-header">
+    <span>📘 Field Guide <span class="panel-tab-hint" style="font-size:8px;font-weight:normal;opacity:.8;margin-left:8px;">click again to close</span></span>
+    <button id="panel-close" onclick="closePanel()" title="Close (Esc)">✕</button>
+  </div>
+  <div id="explain-inner">
+    <div id="explain-content">
+      <p style="color:#555;font-size:11px;line-height:1.55;">Click any <strong style="color:#003087;">column header</strong>, <strong style="color:#003087;">PO number</strong>, <strong style="color:#003087;">vendor</strong>, or <strong style="color:#003087;">account description</strong> to learn what it means.</p>
+    </div>
+  </div>
+</div>
+<div class="training-badge">🎓 Training Mode</div>
+
+<script>
+var PILL_CFG = {
+  poinfo: { colClass:'col-poinfo', text:'#9a3412', line:'rgba(194,65,12,.38)', strong:'rgba(194,65,12,.72)', soft:'rgba(194,65,12,.18)', fill:'rgba(194,65,12,.05)', cell:'rgba(194,65,12,.03)', rCenter:'rgba(194,65,12,.05)', rMid:'rgba(194,65,12,.015)', edge:'rgba(194,65,12,.55)' },
+  chartfields: { colClass:'col-chartfields', text:'#0a5c6e', line:'rgba(14,116,144,.38)', strong:'rgba(14,116,144,.72)', soft:'rgba(14,116,144,.18)', fill:'rgba(14,116,144,.04)', cell:'rgba(14,116,144,.025)', rCenter:'rgba(14,116,144,.04)', rMid:'rgba(14,116,144,.015)', edge:'rgba(14,116,144,.55)' },
+  spend: { colClass:'col-spend', text:'#6b3800', line:'rgba(180,100,0,.38)', strong:'rgba(180,100,0,.72)', soft:'rgba(180,100,0,.18)', fill:'rgba(196,167,71,.05)', cell:'rgba(196,167,71,.03)', rCenter:'rgba(196,167,71,.05)', rMid:'rgba(196,167,71,.015)', edge:'rgba(180,100,0,.55)' },
+  open: { colClass:'col-open', text:'#5b21b6', line:'rgba(124,58,237,.38)', strong:'rgba(124,58,237,.72)', soft:'rgba(124,58,237,.18)', fill:'rgba(124,58,237,.04)', cell:'rgba(124,58,237,.025)', rCenter:'rgba(124,58,237,.04)', rMid:'rgba(124,58,237,.015)', edge:'rgba(124,58,237,.55)' }
+};
+
+var activePill = null;
+var glowStrips = [];
+var PILL_ORDER = ['overview', 'walkthrough', 'poinfo', 'chartfields', 'spend', 'open'];
+var pillBarVisible = false;
+var walkthroughIndex = -1;
+var activeWalkthroughEl = null;
+let activeEl = null;
+
+function applyVars(el, cfg) {
+  el.style.setProperty('--hl-text', cfg.text);
+  el.style.setProperty('--hl-line', cfg.line);
+  el.style.setProperty('--hl-strong', cfg.strong);
+  el.style.setProperty('--hl-soft', cfg.soft);
+  el.style.setProperty('--hl-fill', cfg.fill);
+  el.style.setProperty('--hl-cell', cfg.cell);
+  el.style.setProperty('--hl-edge', cfg.edge);
+}
+function clearHighlights() {
+  document.querySelectorAll('.hl-hdr').forEach(function(el) { el.classList.remove('hl-hdr'); el.style.cssText = ''; });
+  document.querySelectorAll('.hl-cell').forEach(function(el) { el.classList.remove('hl-cell'); el.style.cssText = ''; });
+  glowStrips.forEach(function(s) { s.parentNode && s.parentNode.removeChild(s); });
+  glowStrips = [];
+}
+function positionGlowStrips(colClass, cfg) {
+  var wrapper = document.getElementById('table-wrap');
+  var table = document.getElementById('main-table');
+  if (!wrapper || !table) return;
+  var headers = document.querySelectorAll('th.' + colClass);
+  headers.forEach(function(th) {
+    var left = th.offsetLeft + table.offsetLeft;
+    var strip = document.createElement('div');
+    strip.className = 'hl-glow-strip';
+    strip.style.setProperty('--hl-radial-center', cfg.rCenter);
+    strip.style.setProperty('--hl-radial-mid', cfg.rMid);
+    strip.style.setProperty('--hl-edge', cfg.edge);
+    strip.style.left = left + 'px';
+    strip.style.width = th.offsetWidth + 'px';
+    strip.style.height = wrapper.scrollHeight + 'px';
+    strip.style.top = '0';
+    wrapper.appendChild(strip);
+    glowStrips.push(strip);
+  });
+}
+function applyHighlight(pill) {
+  var cfg = PILL_CFG[pill];
+  if (!cfg) return;
+  document.querySelectorAll('th.' + cfg.colClass).forEach(function(th) { th.classList.add('hl-hdr'); applyVars(th, cfg); });
+  document.querySelectorAll('td.' + cfg.colClass).forEach(function(td) { td.classList.add('hl-cell'); applyVars(td, cfg); });
+  setTimeout(function() { positionGlowStrips(cfg.colClass, cfg); }, 60);
+}
+function togglePill(el) {
+  var p = el.getAttribute('data-pill');
+  if (activePill === p) {
+    el.classList.remove('pill-on');
+    clearHighlights();
+    activePill = null;
+    return;
+  }
+  if (activePill && PILL_CFG[activePill]) {
+    var prev = document.querySelector('.pill[data-pill="' + activePill + '"]');
+    if (prev) prev.classList.remove('pill-on');
+    clearHighlights();
+  }
+  el.classList.add('pill-on');
+  activePill = p;
+  if (PILL_CFG[p]) applyHighlight(p);
+}
+
+function showPillBar() {
+  document.getElementById('pill-bar').style.display = 'flex';
+  pillBarVisible = true;
+  if (!activePill) {
+    var fp = document.querySelector('.pill[data-pill="poinfo"]');
+    if (fp) togglePill(fp);
+  }
+}
+function hidePillBar() {
+  document.getElementById('pill-bar').style.display = 'none';
+  pillBarVisible = false;
+  closeOverviewPanel();
+  closeWalkthrough();
+  if (activePill && PILL_CFG[activePill]) {
+    var prev = document.querySelector('.pill[data-pill="' + activePill + '"]');
+    if (prev) prev.classList.remove('pill-on');
+    clearHighlights();
+    activePill = null;
+  }
+}
+function navigatePill(dir) {
+  if (!pillBarVisible) return;
+  var idx = activePill ? PILL_ORDER.indexOf(activePill) : -1;
+  var next = idx + dir;
+  if (next < 0) next = PILL_ORDER.length - 1;
+  if (next >= PILL_ORDER.length) next = 0;
+  var nextPill = document.querySelector('.pill[data-pill="' + PILL_ORDER[next] + '"]');
+  if (nextPill) nextPill.click();
+}
+function toggleOverviewPill(el) {
+  var panel = document.getElementById('overview-panel');
+  var isOpen = panel.classList.contains('open');
+  closeWalkthrough();
+  if (activePill && PILL_CFG[activePill]) {
+    var prev = document.querySelector('.pill[data-pill="' + activePill + '"]');
+    if (prev) prev.classList.remove('pill-on');
+    clearHighlights();
+    activePill = null;
+  }
+  if (isOpen) {
+    panel.classList.remove('open');
+    el.classList.remove('pill-on');
+    activePill = null;
+  } else {
+    panel.classList.add('open');
+    el.classList.add('pill-on');
+    activePill = 'overview';
+  }
+}
+function closeOverviewPanel() {
+  document.getElementById('overview-panel').classList.remove('open');
+  var ov = document.querySelector('.pill[data-pill="overview"]');
+  if (ov) ov.classList.remove('pill-on');
+}
+
+const WALKTHROUGH_STEPS = [
+  { key:'col_po_number', pill:'poinfo', title:'Step 1 — PO Identity', body:'Start with the PO number, date, status, budget status, vendor, and origin. This tells you what kind of commitment it is, when it was created, and whether it is a normal departmental PO or a sponsored subcontract.' },
+  { key:'col_project', pill:'chartfields', title:'Step 2 — Chartfields', body:'Next, review the project, department, initiative, segment, site, account, and account description. These fields tell you exactly which budget string is carrying the commitment.' },
+  { key:'col_po_merch', pill:'spend', title:'Step 3 — Spend Activity', body:'Then compare P.O. Merchandise Amount and Cumulative Expense. This shows total authorized value and how much has posted so far against the purchase order.' },
+  { key:'col_open_commitment', pill:'open', title:'Step 4 — Open Commitment', body:'Finally, review Open Vouchers and Current Period Open Commitment. This is the remaining encumbrance tied up on the PO and is the figure that rolls to summary report encumbrance balances.' }
+];
+function renderWalkthroughControls(index) {
+  return '<div class="walkthrough-controls">' +
+    (index > 0 ? '<button class="walkthrough-mini" data-wt-nav="prev">◀ Back</button>' : '') +
+    (index < WALKTHROUGH_STEPS.length - 1 ? '<button class="walkthrough-mini" data-wt-nav="next">Next ▶</button>' : '<button class="walkthrough-mini" data-wt-nav="done">Finish</button>') +
+    '</div>';
+}
+function openWalkthroughStep(index) {
+  if (index < 0 || index >= WALKTHROUGH_STEPS.length) return;
+  walkthroughIndex = index;
+  var step = WALKTHROUGH_STEPS[index];
+  if (step.pill && PILL_CFG[step.pill]) {
+    if (activePill && activePill !== step.pill && PILL_CFG[activePill]) {
+      var prev = document.querySelector('.pill[data-pill="' + activePill + '"]');
+      if (prev) prev.classList.remove('pill-on');
+      clearHighlights();
+    }
+    var btn = document.querySelector('.pill[data-pill="' + step.pill + '"]');
+    if (btn) { btn.classList.add('pill-on'); activePill = step.pill; applyHighlight(step.pill); }
+  }
+  if (activeWalkthroughEl) activeWalkthroughEl.classList.remove('active');
+  var el = document.querySelector('.clickable[data-key="' + step.key + '"]');
+  activeWalkthroughEl = el || null;
+  if (el) { el.classList.add('active'); el.scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' }); }
+  var data = FIELDS[step.key] || {};
+  document.getElementById('explain-content').innerHTML =
+    '<div class="explain-field-name">' + step.title + '</div>' +
+    '<div class="explain-section"><div class="tip-badge">GUIDED REVIEW</div><div class="explain-section-body">' + step.body + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge">FOCUS FIELD</div><div class="explain-section-body">' + (data.label || step.key) + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge">RELATED FIELDS</div><div class="explain-section-body">' + (data.related || 'Use nearby fields together for complete analysis.') + '</div></div>' + renderWalkthroughControls(index);
+  document.getElementById('explain-panel').classList.add('open');
+}
+function startWalkthrough() {
+  closeOverviewPanel();
+  if (activePill && PILL_CFG[activePill]) {
+    var prev = document.querySelector('.pill[data-pill="' + activePill + '"]');
+    if (prev) prev.classList.remove('pill-on');
+    clearHighlights();
+  }
+  var wt = document.querySelector('.pill[data-pill="walkthrough"]');
+  if (wt) wt.classList.add('pill-on');
+  activePill = 'walkthrough';
+  openWalkthroughStep(0);
+}
+function closeWalkthrough() {
+  walkthroughIndex = -1;
+  if (activeWalkthroughEl) { activeWalkthroughEl.classList.remove('active'); activeWalkthroughEl = null; }
+  var wt = document.querySelector('.pill[data-pill="walkthrough"]');
+  if (wt) wt.classList.remove('pill-on');
+}
+
+var FIELDS = {
+  warning_note:{label:'Report Accuracy Warning',what:'This note explains why encumbrances here may not always match other reports exactly.',interpret:'Differences can come from accruals, pending change orders, or vouchers not yet fully budget checked.',why:'This prevents false reconciliation issues when totals appear slightly different across reports.',related:'Compare with Project Summary Statement or Sponsored Project Financial Report encumbrance totals.'},
+  col_bu:{label:'P.O. Business Unit',what:'The business unit under which the PO was created.',interpret:'COLUM indicates standard university POs; SAPOS indicates sponsored subcontract POs.',why:'This immediately tells you whether the commitment is a normal departmental PO or a sponsored subcontract.',related:'Read with Origin and Vendor.'},
+  col_po_number:{label:'P.O. Number',what:'The unique identifier for the purchase order.',interpret:'Legacy numbers, CU-prefixed numbers, and G-series numbers indicate different PO pathways.',why:'This is the main reference used to research the document in ARC.',related:'Use with P.O. Date and Vendor.'},
+  col_po_date:{label:'P.O. Date',what:'The date the PO was created or approved.',interpret:'Older dates with large remaining balances may indicate stale commitments.',why:'Helps determine whether an open balance is expected or needs cleanup.',related:'Use with Cumulative Expense and Open Commitment.'},
+  col_po_status:{label:'P.O. Status',what:'The current lifecycle status of the purchase order.',interpret:'Dispatched indicates the PO is active and has been issued to the vendor.',why:'Confirms whether the PO should still be reserving budget.',related:'Read with Budget Status.'},
+  col_budget_status:{label:'Budget Status',what:'Whether the PO passed budget checking.',interpret:'Valid means the encumbrance is supported by budget.',why:'Only valid POs create reliable encumbrance balances.',related:'Directly linked to the warning note.'},
+  col_vendor:{label:'Vendor',what:'The vendor name and vendor ID assigned in ARC.',interpret:'Vendors may be individuals, companies, or institutional subrecipients.',why:'Vendor type affects documentation, compliance, and payment handling.',related:'Click vendor names for vendor-type context.'},
+  col_origin:{label:'Origin',what:'The procurement pathway code.',interpret:'ENG and ONL are standard procurement routes; CRR is used for sponsored subcontracts.',why:'Origin helps distinguish standard purchases from subcontract commitments.',related:'Use with Business Unit.'},
+  col_project:{label:'Project',what:'The project chartfield charged by the PO.',interpret:'This tells you which project budget is carrying the commitment.',why:'It determines where the encumbrance appears on summary reports.',related:'Use with Department and Account.'},
+  col_dept:{ label:'Department', what:'The Department identifies the academic or administrative unit that owns and is responsible for the transaction.', interpret:'Read this as the organizational owner. It answers who is accountable for the transaction.', why:'Department drives responsibility, reporting, and review. At Columbia Engineering, department values typically begin with 52 and identify the school, division, and specific office or unit.', related:'Use with Department Description, Account, Project, and Initiative to understand who owns the activity and why it was charged there.', glossary:`<div class="glossary-title">Department hierarchy — Columbia Engineering</div><div class="dept-hierarchy-wrap"><div class="dept-hierarchy-head">ENG Department Hierarchy</div><div class="dept-hierarchy-sub">School: <b>ENG Engineering</b>. All department numbers are grouped below by division and subdivision so you can trace ownership from top level to exact accountable unit.</div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-admin-pill" data-guide-target="dept-admin"><span>ENG Administration</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-admin"><table class="glossary-table" style="margin-top:6px;"><tr><th>Group</th><th>Department</th><th>Description</th></tr><tr><td>52010XX</td><td>5201101</td><td>ENG General</td></tr><tr><td>52020XX</td><td>5202102</td><td>ENG Dean's Office</td></tr><tr><td>52020XX</td><td>5202103</td><td>ENG Communications</td></tr><tr><td>52020XX</td><td>5202104</td><td>ENG Strategic Initiatives</td></tr><tr><td>52020XX</td><td>5202105</td><td>ENG CVN</td></tr><tr><td>52020XX</td><td>5202106</td><td>ENG Advancement</td></tr><tr><td>52020XX</td><td>5202107</td><td>ENG Faculty Affairs</td></tr><tr><td>52020XX</td><td>5202108</td><td>ENG Finance &amp; Admin</td></tr><tr><td>52020XX</td><td>5202109</td><td>ENG Graduate Student Services</td></tr><tr><td>52020XX</td><td>5202110</td><td>ENG Human Resources</td></tr><tr><td>52020XX</td><td>5202111</td><td>ENG Prof &amp; Executive Prgms</td></tr><tr><td>52020XX</td><td>5202112</td><td>ENG Research Admin</td></tr><tr><td>52020XX</td><td>5202113</td><td>ENG Undergraduate Affairs</td></tr><tr><td>52020XX</td><td>5202114</td><td>ENG Facilities</td></tr><tr><td>52020XX</td><td>5202115</td><td>ENG Information Technology</td></tr><tr><td>52020XX</td><td>5202116</td><td>ENG Office of Academic Program</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-academic-pill" data-guide-target="dept-academic"><span>ENG Academic Departments</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-academic"><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-apam"><span>APAM — Applied Physics &amp; Applied Math (52100XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-apam"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5210101</td><td>ENG APAM General</td></tr><tr><td>5210102</td><td>ENG APAM Faculty</td></tr><tr><td>5210104</td><td>ENG APAM Research</td></tr><tr><td>5210105</td><td>ENG APAM Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-msae"><span>MSAE — Materials Science (52102XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-msae"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5210201</td><td>ENG MSAE General</td></tr><tr><td>5210202</td><td>ENG MSAE Faculty</td></tr><tr><td>5210204</td><td>ENG MSAE Research</td></tr><tr><td>5210205</td><td>ENG MSAE Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-chen"><span>CHEN — Chemical Engineering (52110XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-chen"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5211101</td><td>ENG CHEN General</td></tr><tr><td>5211102</td><td>ENG CHEN Faculty</td></tr><tr><td>5211104</td><td>ENG CHEN Research</td></tr><tr><td>5211105</td><td>ENG CHEN Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-ceem"><span>CEEM — Civil Engineering &amp; Engineering Mechanics (52120XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-ceem"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5212101</td><td>ENG CEEM General</td></tr><tr><td>5212102</td><td>ENG CEEM Faculty</td></tr><tr><td>5212104</td><td>ENG CEEM Research</td></tr><tr><td>5212105</td><td>ENG CEEM Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-coms"><span>COMS — Computer Science (52130XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-coms"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5213101</td><td>ENG COMS General</td></tr><tr><td>5213102</td><td>ENG COMS Faculty</td></tr><tr><td>5213104</td><td>ENG COMS Research</td></tr><tr><td>5213105</td><td>ENG COMS Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-elen"><span>ELEN — Electrical Engineering (52140XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-elen"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5214101</td><td>ENG ELEN General</td></tr><tr><td>5214102</td><td>ENG ELEN Faculty</td></tr><tr><td>5214104</td><td>ENG ELEN Research</td></tr><tr><td>5214105</td><td>ENG ELEN Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-ieor"><span>IEOR — Industrial Engineering &amp; Operations Research (52150XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-ieor"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5215101</td><td>ENG IEOR General</td></tr><tr><td>5215102</td><td>ENG IEOR Faculty</td></tr><tr><td>5215104</td><td>ENG IEOR Research</td></tr><tr><td>5215105</td><td>ENG IEOR Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-mece"><span>MECE — Mechanical Engineering (52160XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-mece"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5216101</td><td>ENG MECE General</td></tr><tr><td>5216102</td><td>ENG MECE Faculty</td></tr><tr><td>5216104</td><td>ENG MECE Research</td></tr><tr><td>5216105</td><td>ENG MECE Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-eaee"><span>EAEE — Earth &amp; Environmental Engineering (52170XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-eaee"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5217101</td><td>ENG EAEE General</td></tr><tr><td>5217102</td><td>ENG EAEE Faculty</td></tr><tr><td>5217104</td><td>ENG EAEE Research</td></tr><tr><td>5217105</td><td>ENG EAEE Centers</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-bmen"><span>BMEN — Biomedical Engineering (52180XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-bmen"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5218101</td><td>ENG BMEN General</td></tr><tr><td>5218102</td><td>ENG BMEN Faculty</td></tr><tr><td>5218104</td><td>ENG BMEN Research</td></tr><tr><td>5218105</td><td>ENG BMEN Centers</td></tr><tr><td>5218201</td><td>Prof Vunjak-Novakovic Lab</td></tr><tr><td>5218202</td><td>Prof Elisa Konofagou Lab</td></tr><tr><td>5218203</td><td>Prof Kam Leong Lab</td></tr><tr><td>5218204</td><td>Prof Sam Sia Lab</td></tr><tr><td>5218205</td><td>Prof Tal Danino Lab</td></tr><tr><td>5218206</td><td>Prof Arinzeh Lab</td></tr><tr><td>5218207</td><td>Santiago Correa Lab</td></tr><tr><td>5218208</td><td>Nuttida Rungratsameeta Lab</td></tr><tr><td>5218209</td><td>Prof Christoph Juchem Lab</td></tr><tr><td>5218210</td><td>Prof Joshua Jacobs Lab</td></tr><tr><td>5218211</td><td>Prof Qi Wang Lab</td></tr><tr><td>5218212</td><td>Prof Paul Sajda Lab</td></tr><tr><td>5218213</td><td>Prof Sanja Vickovic Lab</td></tr><tr><td>5218214</td><td>Prof Ke Cheng Lab</td></tr><tr><td>5218215</td><td>Prof Grace McIlvain</td></tr><tr><td>5218216</td><td>Prof Clark Hung Lab</td></tr><tr><td>5218217</td><td>Prof Elizabeth Hillman Lab</td></tr><tr><td>5218218</td><td>Prof Elham Azizi Lab</td></tr></table></div></div></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-centers-pill" data-guide-target="dept-centers"><span>ENG Centers &amp; Institutes</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-centers"><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-cni"><span>CNI &amp; CCLS (52601XX–52602XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-cni"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5260101</td><td>ENG CNI General</td></tr><tr><td>5260102</td><td>ENG CNI Academic RO</td></tr><tr><td>5260104</td><td>ENG CNI Research</td></tr><tr><td>5260201</td><td>ENG CCLS General</td></tr><tr><td>5260202</td><td>ENG CCLS Academic RO</td></tr><tr><td>5260204</td><td>ENG CCLS Research</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-giss"><span>APAM GISS &amp; Data Science (52603XX–52604XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-giss"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5260301</td><td>ENG APAM GISS General</td></tr><tr><td>5260302</td><td>ENG APAM GISS Academic RO</td></tr><tr><td>5260303</td><td>ENG APAM GISS Research</td></tr><tr><td>5260401</td><td>ENG DATA SCIENCE General</td></tr><tr><td>5260402</td><td>ENG DATA SCIENCE Academic RO</td></tr><tr><td>5260404</td><td>ENG DATA SCIENCE Research</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle dept-subpill" data-guide-target="dept-innovation"><span>Innovation Centers (52605XX)</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="dept-innovation"><table class="glossary-table" style="margin-top:6px;"><tr><th>Department</th><th>Description</th></tr><tr><td>5260501</td><td>ENG LEAP Center</td></tr><tr><td>5260502</td><td>ENG Center for Smart Streetscapes</td></tr><tr><td>5260503</td><td>ENG DREAM Sports AI Innovation</td></tr><tr><td>5260504</td><td>ENG Advanced Electrification</td></tr><tr><td>5260505</td><td>ENG Columbia Fusion Research Ctr</td></tr><tr><td>5260506</td><td>ENG CU Ethereum Research Center</td></tr></table></div></div></div></div></div>` },
+  col_initiative:{ label:'Initiative', what:'The Initiative chartfield categorizes the transaction by institutional or school-wide purpose.', interpret:'This answers what broader purpose the activity supports, such as administration, education, or research.', why:'Initiative allows Columbia Engineering to analyze transactions across departments and projects using a common purpose-based lens.', related:'Use with Project, Activity, Segment, and Department when you need to understand the higher-level purpose behind the charge.', glossary:`<div class="guide-pill-group"><button type="button" class="guide-pill-toggle" data-guide-target="initiative-common"><span>Common initiatives</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="initiative-common"><table class="glossary-table" style="margin-top:6px;"><tr><th>Initiative</th><th>Initiative Description</th><th>Definition</th></tr><tr><td>60908</td><td>ENG Specific Research</td><td>Funding used for specific engineering research projects or initiatives.</td></tr><tr><td>60909</td><td>ENG Start-up</td><td>Funds provided to new faculty to help launch their research labs and programs.</td></tr><tr><td>29214</td><td>ENG Dept General Operations</td><td>General operating expenses used to support department activities.</td></tr><tr><td>41814</td><td>ENG Faculty Discretionary</td><td>Funds faculty can use for academic or research-related needs at their discretion.</td></tr><tr><td>41809</td><td>ENG Undergraduate Academic</td><td>Expenses supporting undergraduate academic programs and coursework.</td></tr><tr><td>40096</td><td>ENG Summer Salary Costs</td><td>Salary paid to faculty for work performed during the summer period.</td></tr><tr><td>10001</td><td>Payroll Suspense</td><td>Temporary account used when payroll expenses need to be reviewed or reassigned.</td></tr><tr><td>29223</td><td>ENG Student Recruitment</td><td>Expenses used to attract and recruit new students to engineering programs.</td></tr><tr><td>41804</td><td>ENG Graduate Activities</td><td>Programs, events, or services supporting graduate student life.</td></tr><tr><td>60025</td><td>GEN RES Stabilization Awards</td><td>Funding used to stabilize or support research programs during funding gaps.</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle" data-guide-target="initiative-more"><span>Show more common initiatives</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="initiative-more"><table class="glossary-table" style="margin-top:6px;"><tr><th>Initiative</th><th>Initiative Description</th><th>Definition</th></tr><tr><td>60910</td><td>ENG SEAS Inter. Res. Seed Fund</td><td>Seed funding to support new interdisciplinary research ideas in engineering.</td></tr><tr><td>60900</td><td>ENG Deans Research Support</td><td>Funding from the Dean’s Office to support faculty research initiatives.</td></tr><tr><td>41826</td><td>ENG Student Clubs</td><td>Support for student-led clubs and extracurricular organizations.</td></tr><tr><td>41802</td><td>ENG Conferences</td><td>Costs related to hosting or supporting academic conferences.</td></tr><tr><td>41803</td><td>ENG Graduate Academic</td><td>Expenses supporting graduate academic programs and instruction.</td></tr><tr><td>41816</td><td>ENG Fellowship Support</td><td>Funding used to support student fellowships or stipends.</td></tr><tr><td>41808</td><td>ENG Teaching assistants</td><td>Support for graduate teaching assistants helping with courses.</td></tr><tr><td>41815</td><td>ENG Professorships</td><td>Funds supporting endowed or named faculty professorship positions.</td></tr><tr><td>41821</td><td>ENG Orientation</td><td>Costs related to student orientation programs.</td></tr><tr><td>41817</td><td>ENG High School Programs</td><td>Programs designed for high school students engaging with engineering.</td></tr><tr><td>29205</td><td>ENG Graduate Admissions</td><td>Expenses related to the graduate admissions process.</td></tr><tr><td>29216</td><td>ENG Special Event</td><td>Costs for special events hosted by engineering departments or programs.</td></tr><tr><td>60901</td><td>ENG Dept Research Support</td><td>Department-level support for faculty research activities.</td></tr><tr><td>29220</td><td>ENG Fundraising</td><td>Activities related to fundraising and development efforts.</td></tr><tr><td>29210</td><td>ENG Renovations and Repairs</td><td>Expenses for repairing or renovating department spaces or facilities.</td></tr><tr><td>40511</td><td>ENG Faculty Support - General</td><td>General support funding for faculty activities or needs.</td></tr><tr><td>41810</td><td>ENG Undergraduate Activities</td><td>Programs, events, or initiatives supporting undergraduate students.</td></tr></table></div></div>` },
+  col_segment:{ label:'Segment', what:'The Segment chartfield adds more specific context about who or what the activity is associated with.', interpret:'Read this as the precision layer of the chartstring. It may point to a person, role, program component, student group, event, or other focused business use.', why:'Segment improves reporting detail and helps distinguish similar transactions that otherwise share the same department, project, and initiative.', related:'Use with Initiative, Activity, Department, and Site to understand the exact business context of the expense.', glossary:`<div class="guide-pill-group"><button type="button" class="guide-pill-toggle" data-guide-target="segment-common"><span>Common segments</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="segment-common"><table class="glossary-table" style="margin-top:6px;"><tr><th>Segment</th><th>Segment Description</th><th>Definition</th></tr><tr><td>52000167</td><td>ENG Staff General</td><td>Funding used for general staff-related expenses within Engineering.</td></tr><tr><td>52000048</td><td>ENG Student</td><td>Funding supporting general student-related activities or expenses.</td></tr><tr><td>52000020</td><td>ENG Financial Aid Gen</td><td>Funds used to support general student financial aid.</td></tr><tr><td>52000026</td><td>ENG Teaching Lab</td><td>Expenses related to teaching laboratories used for courses.</td></tr><tr><td>52000102</td><td>ENG Staff Meeting</td><td>Costs associated with meetings for departmental staff.</td></tr><tr><td>52000070</td><td>ENG PHD</td><td>Activities or expenses related to PhD students or doctoral programs.</td></tr><tr><td>52000071</td><td>ENG Faculty</td><td>Funding supporting faculty-related expenses or activities.</td></tr><tr><td>52000069</td><td>ENG Masters</td><td>Expenses related to master's degree programs.</td></tr><tr><td>52000121</td><td>ENG Course Assistant</td><td>Support for course assistants who help with instruction.</td></tr><tr><td>52000016</td><td>ENG Undergraduate - other</td><td>Miscellaneous expenses supporting undergraduate programs.</td></tr></table></div></div><div class="guide-pill-group"><button type="button" class="guide-pill-toggle" data-guide-target="segment-more"><span>Show more common segments</span><span class="guide-pill-caret">▾</span></button><div class="guide-pill-panel" id="segment-more"><table class="glossary-table" style="margin-top:6px;"><tr><th>Segment</th><th>Segment Description</th><th>Definition</th></tr><tr><td>52000098</td><td>ENG Technology</td><td>Expenses related to technology resources or initiatives.</td></tr><tr><td>52000150</td><td>ENG Faculty Meeting</td><td>Costs associated with faculty meetings.</td></tr><tr><td>52000188</td><td>ENG Career Placement &amp; Develop</td><td>Programs supporting student career placement and professional development.</td></tr><tr><td>52000049</td><td>ENG Graduation</td><td>Expenses supporting engineering graduation ceremonies and related events.</td></tr><tr><td>52000139</td><td>ENG O/D Funding</td><td>Funding used for special or one-time departmental support or discretionary funding.</td></tr><tr><td>52000316</td><td>ENG Barnard</td><td>Expenses related to programs or collaboration involving Barnard College.</td></tr><tr><td>52000117</td><td>ENG ISSO Fees</td><td>Fees associated with international student services and visa administration.</td></tr><tr><td>52000140</td><td>ENG Student Office Refresher</td><td>Costs for refreshments or supplies for student-facing office spaces or events.</td></tr><tr><td>52000128</td><td>ENG Lab refresher</td><td>Refreshments or small supplies provided for laboratory meetings or activities.</td></tr><tr><td>52000059</td><td>ENG Executive Meeting</td><td>Expenses related to meetings of engineering leadership or executive staff.</td></tr><tr><td>52000229</td><td>ENG Makerspace</td><td>Funding supporting makerspace labs used for student projects and prototyping.</td></tr><tr><td>52000001</td><td>ENG Admissions</td><td>Expenses related to recruiting and admitting new engineering students.</td></tr></table></div></div>` },
+  col_site:{label:'Site',what:'The location or site code associated with the PO.',interpret:'Some projects use site coding while others leave it blank.',why:'Supports location-based reporting where relevant.',related:'Part of the chartstring.'},
+  col_account:{label:'Account',what:'The natural account code for the expense type.',interpret:'Account code determines category and allowability.',why:'It controls how the encumbrance appears on summary reports.',related:'Use with Account Description.'},
+  col_acct_desc:{label:'Account Description',what:'The plain-language description of the natural account.',interpret:'This tells you the type of cost the PO is reserving budget for.',why:'Makes it easier to assess whether the expense category makes sense.',related:'Click for account-specific context.'},
+  col_po_merch:{label:'P.O. Merchandise Amount',what:'The total authorized value of the PO.',interpret:'This is the ceiling amount available to be invoiced.',why:'It shows total exposure under the PO.',related:'Compare with Cumulative Expense and Open Commitment.'},
+  col_cumulative:{label:'Cumulative Expense',what:'The total amount already invoiced and posted.',interpret:'A high cumulative amount means the PO has been substantially used.',why:'Shows how much of the PO has already turned into actual expense.',related:'Compare with Merchandise Amount.'},
+  col_open_vouchers:{label:'Open Vouchers',what:'Invoices matched to the PO but not yet fully posted.',interpret:'These are commitments in transition.',why:'They explain timing differences between PO and summary reports.',related:'Part of total open obligation.'},
+  col_open_commitment:{label:'Current Period Open Commitment',what:'The remaining open amount on the PO.',interpret:'This is the live encumbrance still reserving budget.',why:'This is the most important balance on the report.',related:'These balances roll into encumbrance totals on summary reports.'},
+  nav_printable:{label:'Printable Version',what:'A cleaner print-oriented version of the report.',interpret:'Used for sharing or retaining documentation.',why:'Helpful for audit support or distribution.',related:'Use when exporting or attaching the report.'},
+  param_bu:{label:'PC Business Unit(s): ALL',what:'Shows the business unit filter used for the report.',interpret:'ALL ensures both standard and sponsored PO types are included.',why:'Important for completeness.',related:'Use with project filter.'},
+  param_po_id:{label:'PO ID(s): ALL',what:'Shows whether the report was run for all POs or only selected ones.',interpret:'ALL means the full PO population is shown for the selected filters.',why:'Important for completeness.',related:'Useful when narrowing to one PO.'},
+  param_origin:{label:'Origin(s): ALL',what:'Shows the procurement pathway filter.',interpret:'ALL includes ENG, ONL, and CRR.',why:'Ensures all PO pathways are included.',related:'Use with Business Unit.'},
+  param_dept:{label:'Department(s): ALL',what:'Shows the department filter used.',interpret:'ALL means all departments tied to the selected projects are included.',why:'Important for full reconciliation.',related:'Use with Project.'},
+  param_project:{label:'Projects',what:'Shows which projects were included in the run.',interpret:'Only POs tied to these projects appear.',why:'This is the most important report filter.',related:'Project drives summary report rollups.'},
+  param_activity:{label:'Activity ID(s): ALL',what:'Shows whether the report was limited to specific activity IDs.',interpret:'ALL means no activity restriction.',why:'Important when validating completeness.',related:'Relevant for project-period analysis.'},
+  param_vendor:{label:'Vendor(s): ALL',what:'Shows whether the report was run for specific vendors or all vendors.',interpret:'ALL includes every vendor matching the other filters.',why:'Important for full commitment review.',related:'Useful when drilling into one supplier.'},
+  param_commit_type:{label:'Commitment Type: All Commitments',what:'Shows which commitment types are included.',interpret:'All Commitments means the run is designed to capture the full open commitment picture.',why:'Ensures users understand the report scope.',related:'Connects to encumbrance and pre-encumbrance logic on summary reports.'}
+};
+
+const ACCOUNT_DETAILS = {
+  '64505':{ label:'64505 — Consultants-General', definition:'Payments to consultants or professional service providers.', interpret:'Used for standard consulting relationships and some professional services.', why:'This account often drives notable open commitments on departmental and sponsored budgets.' },
+  '64540':{ label:'64540 — Marketing Consultants', definition:'Payments for marketing, communications, and related consulting support.', interpret:'Used for branding, communications, and design-related outside services.', why:'Important because these costs belong on the correct budget type.' },
+  '63260':{ label:'63260 — Software Purchase', definition:'Software licenses, subscriptions, or purchases.', interpret:'Often reflects annual or multi-period software commitments.', why:'Helps explain recurring technology encumbrances.' },
+  '63010':{ label:'63010 — Rental - Facilities', definition:'Rental of space or facilities.', interpret:'Used for event, meeting, or facility-related commitments.', why:'Often useful when matching current-period activity to actuals.' },
+  '65020':{ label:'65020 — Subcontracts Out of MTDC', definition:'Subcontract costs above the MTDC threshold.', interpret:'Used for sponsored project subcontract balances.', why:'Critical for sponsored award compliance and F&A treatment.' },
+  '61925':{ label:'61925 — Minor Equipment-Computers', definition:'Small-dollar computer equipment below capitalization threshold.', interpret:'Used when equipment is ordered but may not yet be invoiced.', why:'Often appears as an open commitment until delivery and payment.' }
+};
+const PO_DETAILS = {
+  legacy:{ label:'Legacy PO', definition:'Older numeric PO format from the legacy procurement system.', interpret:'Older open balances may indicate stale commitments worth reviewing.', why:'Legacy POs are common cleanup candidates if still open after long periods.' },
+  online:{ label:'Online PO', definition:'Current-system PO created through ARC e-procurement.', interpret:'Represents the modern electronic procurement workflow.', why:'Provides a cleaner audit trail and more current approval history.' },
+  sapos:{ label:'SAPOS / Subcontract PO', definition:'Sponsored subcontract PO using G-series numbering.', interpret:'Represents a formal subcontract to another institution.', why:'These carry added sponsored-project compliance obligations.' }
+};
+const VENDOR_DETAILS = {
+  individual:{ label:'Individual Consultant', definition:'An individual service provider or independent contractor.', interpret:'Usually tied to consulting agreements and deliverables.', why:'May require added tax or documentation review.' },
+  firm:{ label:'Corporate / Institutional Vendor', definition:'A company or organization providing goods or services.', interpret:'Standard vendor relationship for purchases or contracted services.', why:'Important for procurement review and payment history.' },
+  subrecipient:{ label:'Subrecipient Institution', definition:'An outside institution performing substantive work on a sponsored award.', interpret:'These are not simple vendors; they are research partners under a subcontract.', why:'Requires subrecipient monitoring and stronger compliance oversight.' }
+};
+
+function openPanel(key, el) {
+  if (activeEl === el) { closePanel(); return; }
+  const data = FIELDS[key] || { label: key, what:'...', interpret:'...', why:'...', related:'...' };
+  if (activeEl) activeEl.classList.remove('active');
+  activeEl = el; el.classList.add('active');
+  document.getElementById('explain-content').innerHTML =
+    '<div class="explain-field-name">' + data.label + '</div>' +
+    '<div class="explain-section"><div class="tip-badge' + (key==='warning_note' ? ' warn-badge' : '') + '">WHAT IT IS</div><div class="explain-section-body">' + data.what + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge' + (key==='warning_note' ? ' warn-badge' : '') + '">HOW TO INTERPRET</div><div class="explain-section-body">' + data.interpret + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge' + (key==='warning_note' ? ' warn-badge' : '') + '">WHY IT MATTERS</div><div class="explain-section-body">' + data.why + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge' + (key==='warning_note' ? ' warn-badge' : '') + '">RELATED FIELDS</div><div class="explain-section-body">' + data.related + '</div></div>' +
+    (data.glossary ? data.glossary : '');
+  document.getElementById('explain-panel').classList.add('open');
+}
+function openAccount(code, el) {
+  if (activeEl === el) { closePanel(); return; }
+  const data = ACCOUNT_DETAILS[code]; if (!data) return;
+  if (activeEl) activeEl.classList.remove('active');
+  activeEl = el; el.classList.add('active');
+  document.getElementById('explain-content').innerHTML =
+    '<div class="explain-field-name">' + data.label + '</div>' +
+    '<div class="explain-section"><div class="tip-badge acct-badge">DEFINITION</div><div class="explain-section-body">' + data.definition + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge acct-badge">HOW TO INTERPRET</div><div class="explain-section-body">' + data.interpret + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge acct-badge">WHY IT MATTERS</div><div class="explain-section-body">' + data.why + '</div></div>';
+  document.getElementById('explain-panel').classList.add('open');
+}
+function openPO(type, el) {
+  if (activeEl === el) { closePanel(); return; }
+  const data = PO_DETAILS[type]; if (!data) return;
+  if (activeEl) activeEl.classList.remove('active');
+  activeEl = el; el.classList.add('active');
+  document.getElementById('explain-content').innerHTML =
+    '<div class="explain-field-name">' + data.label + '</div>' +
+    '<div class="explain-section"><div class="tip-badge">PO TYPE</div><div class="explain-section-body">' + data.definition + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge">HOW TO INTERPRET</div><div class="explain-section-body">' + data.interpret + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge">WHY IT MATTERS</div><div class="explain-section-body">' + data.why + '</div></div>';
+  document.getElementById('explain-panel').classList.add('open');
+}
+function openVendor(type, el) {
+  if (activeEl === el) { closePanel(); return; }
+  const data = VENDOR_DETAILS[type]; if (!data) return;
+  if (activeEl) activeEl.classList.remove('active');
+  activeEl = el; el.classList.add('active');
+  document.getElementById('explain-content').innerHTML =
+    '<div class="explain-field-name">' + data.label + '</div>' +
+    '<div class="explain-section"><div class="tip-badge vendor-badge">VENDOR TYPE</div><div class="explain-section-body">' + data.definition + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge vendor-badge">HOW TO INTERPRET</div><div class="explain-section-body">' + data.interpret + '</div></div>' +
+    '<div class="explain-section"><div class="tip-badge vendor-badge">WHY IT MATTERS</div><div class="explain-section-body">' + data.why + '</div></div>';
+  document.getElementById('explain-panel').classList.add('open');
+}
+function closePanel() {
+  closeWalkthrough();
+  closeOverviewPanel();
+  document.getElementById('explain-panel').classList.remove('open');
+  if (activeEl) { activeEl.classList.remove('active'); activeEl = null; }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight') { e.preventDefault(); if (pillBarVisible) navigatePill(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); if (pillBarVisible) navigatePill(-1); }
+  else if (e.key === 'Escape') { closePanel(); if (pillBarVisible) hidePillBar(); }
+});
+
+document.getElementById('table-scroll-area').addEventListener('scroll', function() {
+  if (activePill && PILL_CFG[activePill]) {
+    glowStrips.forEach(function(s) { s.parentNode && s.parentNode.removeChild(s); });
+    glowStrips = [];
+    positionGlowStrips(PILL_CFG[activePill].colClass, PILL_CFG[activePill]);
+  }
+});
+
+document.documentElement.style.zoom = '150%';
+// After zoom, 100vh in CSS = 150vh of screen. Fix the containers to actual screen height.
+(function() {
+  var realVH = window.screen.height / 1.5;
+  var panel = document.getElementById('report-panel');
+  var body = document.body;
+  body.style.height = (window.innerHeight / 1.5) + 'px';
+  panel.style.height = (window.innerHeight / 1.5) + 'px';
+  window.addEventListener('resize', function() {
+    body.style.height = (window.innerHeight / 1.5) + 'px';
+    panel.style.height = (window.innerHeight / 1.5) + 'px';
+  });
+})();
+</script>
+</body>
+</html>
